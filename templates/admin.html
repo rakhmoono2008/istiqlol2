@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}Администратор{% endblock %}
+{% block extra_styles %}
+<style>
+.page-wrap{max-width:1100px;margin:0 auto;padding:2rem}
+.admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+.stat-card{background:#fff;border:.5px solid var(--border);border-radius:13px;padding:1.25rem}
+.stat-n{font-family:'DM Serif Display',serif;font-size:30px;margin-bottom:3px}
+.stat-l{font-size:12px;color:var(--warm-gray)}
+.admin-section{background:#fff;border:.5px solid var(--border);border-radius:15px;overflow:hidden;margin-bottom:1.5rem}
+.sec-head{padding:1rem 1.4rem;border-bottom:.5px solid var(--border);font-size:14.5px;font-weight:500}
+.user-row{padding:.9rem 1.4rem;display:flex;justify-content:space-between;align-items:center;border-bottom:.5px solid #f5f3f0}
+.user-row:last-child{border-bottom:none}
+.role-pill{font-size:11.5px;font-weight:500;padding:3px 11px;border-radius:40px}
+.r-admin{background:var(--rose-light);color:var(--rose)}
+.r-seeker{background:var(--cream);color:var(--warm-gray);border:.5px solid var(--border)}
+.r-employer{background:var(--sage-light);color:var(--sage)}
+.add-form{padding:1.25rem 1.4rem}
+.form-label{font-size:12.5px;font-weight:500;color:var(--warm-gray);display:block;margin-bottom:5px}
+.form-input{padding:9px 13px;border:.5px solid var(--border);border-radius:9px;font-family:'Outfit',sans-serif;font-size:13px;background:var(--cream);outline:none;transition:border-color .15s;color:var(--dark)}
+.form-input:focus{border-color:var(--rose);background:#fff}
+.fg{display:grid;gap:.75rem;grid-template-columns:repeat(3,1fr) auto;align-items:end;margin-bottom:0}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <div style="font-family:'DM Serif Display',serif;font-size:30px;margin-bottom:1.5rem">Панель администратора</div>
+
+  <div class="admin-stats">
+    <div class="stat-card"><div class="stat-n" style="color:var(--rose)">{{ stats.users }}</div><div class="stat-l">Пользователей</div></div>
+    <div class="stat-card"><div class="stat-n" style="color:var(--sage)">{{ stats.jobs }}</div><div class="stat-l">Вакансий</div></div>
+    <div class="stat-card"><div class="stat-n">{{ stats.courses }}</div><div class="stat-l">Курсов</div></div>
+    <div class="stat-card"><div class="stat-n" style="color:var(--gold)">{{ stats.companies }}</div><div class="stat-l">Компаний</div></div>
+  </div>
+
+  <!-- ПОЛЬЗОВАТЕЛИ -->
+  <div class="admin-section">
+    <div class="sec-head">Пользователи</div>
+    {% for user in stats.user_list %}
+    <div class="user-row">
+      <div>
+        <div style="font-size:14px;font-weight:500">{{ user.full_name or user.username }} <span style="font-weight:400;color:var(--warm-gray)">@{{ user.username }}</span></div>
+        <div style="font-size:12px;color:var(--warm-gray)">{{ user.created_at.strftime('%d.%m.%Y') }}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="role-pill r-{{ user.role }}">{{ user.role }}</span>
+        {% if user.id != current_user.id %}
+        <form method="POST" action="{{ url_for('toggle_user_role', user_id=user.id) }}">
+          <button class="btn btn-ghost" type="submit" style="font-size:12px;padding:5px 12px">Сменить роль</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ДОБАВИТЬ БИОГРАФИЮ -->
+  <div class="admin-section">
+    <div class="sec-head">Добавить историю успеха</div>
+    <div class="add-form">
+      <form method="POST" action="{{ url_for('add_biography') }}">
+        <div class="fg">
+          <div>
+            <label class="form-label">Имя</label>
+            <input class="form-input" style="width:100%" type="text" name="name" required placeholder="Нилуфар Рашидова"/>
+          </div>
+          <div>
+            <label class="form-label">Должность</label>
+            <input class="form-input" style="width:100%" type="text" name="role" placeholder="CEO"/>
+          </div>
+          <div>
+            <label class="form-label">Компания</label>
+            <input class="form-input" style="width:100%" type="text" name="company" placeholder="TechUz"/>
+          </div>
+          <div>
+            <label class="form-label">Эмодзи</label>
+            <input class="form-input" style="width:70px" type="text" name="emoji" value="👩‍💼"/>
+          </div>
+        </div>
+        <div style="margin-top:.75rem">
+          <label class="form-label">Цитата</label>
+          <input class="form-input" style="width:100%" type="text" name="quote" placeholder="Вдохновляющая цитата..."/>
+        </div>
+        <button class="btn btn-rose" type="submit" style="margin-top:.75rem">+ Добавить</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ДОБАВИТЬ КУРС -->
+  <div class="admin-section">
+    <div class="sec-head">Добавить курс</div>
+    <div class="add-form">
+      <form method="POST" action="{{ url_for('add_course') }}">
+        <div class="fg" style="grid-template-columns:2fr 1fr 1fr 1fr auto">
+          <div>
+            <label class="form-label">Название</label>
+            <input class="form-input" style="width:100%" type="text" name="title" required placeholder="Название курса"/>
+          </div>
+          <div>
+            <label class="form-label">Категория</label>
+            <input class="form-input" style="width:100%" type="text" name="category" placeholder="IT"/>
+          </div>
+          <div>
+            <label class="form-label">Часов</label>
+            <input class="form-input" style="width:100%" type="number" name="hours" placeholder="40"/>
+          </div>
+          <div>
+            <label class="form-label">Уровень</label>
+            <select class="form-input" name="level" style="width:100%">
+              <option>Начальный</option><option>Средний</option><option>Продвинутый</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Эмодзи</label>
+            <input class="form-input" style="width:70px" type="text" name="emoji" value="📚"/>
+          </div>
+        </div>
+        <button class="btn btn-sage" type="submit" style="margin-top:.75rem">+ Добавить курс</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

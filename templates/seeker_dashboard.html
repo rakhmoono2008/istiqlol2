@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+{% block title %}Дашборд{% endblock %}
+{% block extra_styles %}
+<style>
+.dash-wrap{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 58px)}
+.sidebar{background:#fff;border-right:.5px solid var(--border);padding:1.25rem .875rem;display:flex;flex-direction:column;gap:1.5rem;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
+.sb-user{display:flex;align-items:center;gap:10px;padding:.6rem .5rem}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--rose-light);color:var(--rose);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:14px;flex-shrink:0}
+.sb-name{font-size:14px;font-weight:500}
+.sb-role{font-size:12px;color:var(--warm-gray)}
+.sb-nav{display:flex;flex-direction:column;gap:3px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:10px;font-size:14px;color:var(--warm-gray);cursor:pointer;transition:.15s;border:none;background:none;width:100%;text-align:left;font-family:'Outfit',sans-serif}
+.sb-item:hover{background:var(--cream);color:var(--dark)}
+.sb-item.active{background:var(--rose-light);color:var(--rose);font-weight:500}
+.sb-icon{font-size:15px;width:18px;text-align:center}
+.content{padding:2rem;background:var(--cream);overflow-y:auto}
+.tab-pane{display:none}.tab-pane.active{display:block}
+.c-header{margin-bottom:1.75rem}
+.c-header h2{font-family:'DM Serif Display',serif;font-size:27px;margin-bottom:3px}
+.c-header p{font-size:13px;color:var(--warm-gray)}
+
+/* AI Banner */
+.ai-banner{background:linear-gradient(135deg,#2c2420,#4a3830);border-radius:16px;padding:1.4rem 1.5rem;display:flex;align-items:center;gap:1.4rem;margin-bottom:1.75rem}
+.ai-ico{width:46px;height:46px;background:var(--rose);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ai-txt h3{color:#fff;font-size:15px;font-weight:500;margin-bottom:3px}
+.ai-txt p{color:rgba(255,255,255,.58);font-size:12.5px}
+.ai-score{background:rgba(255,255,255,.1);border-radius:10px;padding:7px 15px;text-align:center;flex-shrink:0}
+.score-n{color:var(--gold);font-family:'DM Serif Display',serif;font-size:26px}
+.score-l{color:rgba(255,255,255,.45);font-size:10.5px}
+
+/* Filters */
+.filter-row{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap}
+.chip{padding:5px 15px;border-radius:40px;font-size:13px;cursor:pointer;border:.5px solid var(--border);background:#fff;color:var(--warm-gray);transition:.15s}
+.chip:hover{border-color:var(--rose);color:var(--rose)}
+.chip.on{background:var(--rose);color:#fff;border-color:var(--rose)}
+
+/* Jobs */
+.section-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.section-title-row h3{font-family:'DM Serif Display',serif;font-size:22px}
+.see-all{font-size:13px;color:var(--rose);font-weight:500}
+.see-all:hover{text-decoration:underline}
+.jobs-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem}
+.job-card{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.2rem;cursor:pointer;transition:.2s}
+.job-card:hover{border-color:var(--rose);transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.06)}
+.job-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.7rem}
+.co-logo{width:42px;height:42px;border-radius:10px;background:var(--sage-light);display:flex;align-items:center;justify-content:center;font-size:18px}
+.match-badge{background:var(--sage-light);color:var(--sage);font-size:11.5px;font-weight:500;padding:3px 9px;border-radius:40px}
+.job-title{font-size:15px;font-weight:500;margin-bottom:3px}
+.job-co{font-size:12.5px;color:var(--warm-gray);margin-bottom:.65rem}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.65rem}
+.tag{background:var(--cream);border:.5px solid var(--border);border-radius:5px;padding:2px 9px;font-size:11.5px;color:var(--warm-gray)}
+.job-foot{display:flex;justify-content:space-between;align-items:center;border-top:.5px solid #f0ede8;padding-top:.65rem}
+.salary{font-size:14px;font-weight:500}
+.loc{font-size:12px;color:var(--warm-gray)}
+.applied-badge{background:var(--sage-light);color:var(--sage);font-size:11px;font-weight:500;padding:2px 9px;border-radius:40px}
+
+/* Courses home strip */
+.home-courses-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.875rem;margin-bottom:2rem}
+.hc-card{background:#fff;border:.5px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:.2s}
+.hc-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.07);border-color:#d4c5be}
+.hc-thumb{height:72px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.hc-body{padding:.75rem .9rem}
+.hc-cat{font-size:10px;font-weight:600;text-transform:uppercase;color:var(--rose);letter-spacing:.5px;margin-bottom:4px}
+.hc-title{font-size:13px;font-weight:500;margin-bottom:5px;line-height:1.3}
+.hc-meta{display:flex;justify-content:space-between;align-items:center}
+.hc-hours{font-size:11px;color:var(--warm-gray)}
+.cert-pip{background:var(--gold-light);color:var(--gold);font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px}
+
+/* Courses tab */
+.courses-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.course-card{background:#fff;border:.5px solid var(--border);border-radius:15px;overflow:hidden;cursor:pointer;transition:.2s}
+.course-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.06)}
+.c-thumb{height:88px;display:flex;align-items:center;justify-content:center;font-size:34px}
+.c-body{padding:.9rem 1rem}
+.c-cat{font-size:10.5px;font-weight:600;text-transform:uppercase;color:var(--rose);letter-spacing:.5px;margin-bottom:5px}
+.c-title{font-size:14px;font-weight:500;margin-bottom:7px;line-height:1.35}
+.c-meta{font-size:12px;color:var(--warm-gray);display:flex;justify-content:space-between;align-items:center}
+.cert-badge{display:inline-flex;align-items:center;gap:3px;background:var(--gold-light);color:var(--gold);font-size:10.5px;font-weight:500;padding:2px 8px;border-radius:5px}
+.prog-bar{height:3px;background:#f0ede8;border-radius:3px;margin-top:8px;overflow:hidden}
+.prog-fill{height:100%;background:var(--rose);border-radius:3px}
+.enroll-btn{display:block;width:100%;margin-top:10px;padding:8px;border-radius:8px;border:.5px solid var(--rose);color:var(--rose);background:none;font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:500;cursor:pointer;transition:.15s;text-align:center}
+.enroll-btn:hover{background:var(--rose);color:#fff}
+
+/* Biographies */
+.bio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.bio-card{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.25rem;transition:.2s;text-align:center}
+.bio-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.06)}
+.bio-av{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto .75rem}
+.bio-name{font-size:14.5px;font-weight:500;margin-bottom:3px}
+.bio-role{font-size:12px;color:var(--warm-gray);margin-bottom:.7rem}
+.bio-quote{font-size:12.5px;color:var(--warm-gray);font-style:italic;line-height:1.55}
+
+/* Profile */
+.profile-layout{display:grid;grid-template-columns:255px 1fr;gap:1.25rem}
+.prof-card{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.4rem;text-align:center}
+.prof-av{width:76px;height:76px;border-radius:50%;background:var(--rose-light);color:var(--rose);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:500;margin:0 auto .9rem}
+.prof-name{font-size:17px;font-weight:500;margin-bottom:3px}
+.prof-sub{font-size:12.5px;color:var(--warm-gray);margin-bottom:.9rem}
+.skills-lbl{font-size:12.5px;font-weight:500;text-align:left;margin-bottom:5px;margin-top:.5rem}
+.skills-wrap{display:flex;flex-wrap:wrap;gap:5px;text-align:left}
+.skill-pill{background:var(--rose-light);color:var(--rose);font-size:11.5px;padding:3px 11px;border-radius:40px}
+.p-section{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.25rem;margin-bottom:.875rem}
+.p-sec-title{font-size:14.5px;font-weight:500;margin-bottom:.9rem;display:flex;justify-content:space-between;align-items:center}
+.form-label{font-size:12.5px;font-weight:500;color:var(--warm-gray);display:block;margin-bottom:5px}
+.form-input{width:100%;padding:9px 13px;border:.5px solid var(--border);border-radius:9px;font-family:'Outfit',sans-serif;font-size:13.5px;background:var(--cream);outline:none;transition:border-color .15s;color:var(--dark)}
+.form-input:focus{border-color:var(--rose);background:#fff}
+.form-row{margin-bottom:1rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-wrap">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-user">
+      <div class="avatar">{{ (current_user.full_name or current_user.username)[0].upper() }}</div>
+      <div>
+        <div class="sb-name">{{ current_user.full_name or current_user.username }}</div>
+        <div class="sb-role">Соискатель</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <button class="sb-item active" onclick="showTab('home',this)"><span class="sb-icon">✦</span>Главная</button>
+      <button class="sb-item" onclick="showTab('courses',this)"><span class="sb-icon">◈</span>Курсы</button>
+      <button class="sb-item" onclick="showTab('biographies',this)"><span class="sb-icon">◎</span>Биографии</button>
+      <button class="sb-item" onclick="showTab('profile',this)"><span class="sb-icon">○</span>Профиль</button>
+      <a class="sb-item" href="{{ url_for('chat_list') }}" style="text-decoration:none"><span class="sb-icon">💬</span>Сообщения</a>
+    </nav>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- HOME TAB -->
+    <div id="tab-home" class="tab-pane active">
+      <div class="c-header">
+        <h2>Добро пожаловать, {{ current_user.full_name or current_user.username }} 👋</h2>
+        <p>Найдено {{ jobs|length }} вакансий и {{ courses|length }} курсов для вас</p>
+      </div>
+
+      <div class="ai-banner">
+        <div class="ai-ico">🤖</div>
+        <div class="ai-txt" style="flex:1">
+          <h3>Рекомендации обновлены</h3>
+          <p>На основе ваших навыков: {{ user_skills | join(', ') or 'заполните профиль для персонализации' }} {% if current_user.city %}· {{ current_user.city }}{% endif %}</p>
+        </div>
+        <div class="ai-score">
+          <div class="score-n">94%</div>
+          <div class="score-l">совпадение</div>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <div class="chip on">Все</div>
+        <div class="chip" onclick="toggleChip(this)">Ташкент</div>
+        <div class="chip" onclick="toggleChip(this)">Удалённо</div>
+        <div class="chip" onclick="toggleChip(this)">IT</div>
+        <div class="chip" onclick="toggleChip(this)">Маркетинг</div>
+      </div>
+
+      <div class="section-title-row">
+        <h3>Рекомендуемые вакансии</h3>
+        <a class="see-all" href="{{ url_for('jobs') }}">Смотреть все →</a>
+      </div>
+      <div class="jobs-grid">
+        {% for job in jobs[:4] %}
+        {% set days_old = (now - job.created_at).days %}
+        <a href="{{ url_for('job_detail', job_id=job.id) }}" style="text-decoration:none;color:inherit">
+          <div class="job-card" style="{% if days_old <= 3 %}border-color:var(--rose);background:linear-gradient(to bottom right,#fff,#fdf5f3){% endif %}">
+            <div class="job-top">
+              <div class="co-logo">🏢</div>
+              {% if job.id in applied_job_ids %}
+                <span class="applied-badge">✓ Отклик отправлен</span>
+              {% elif days_old <= 3 %}
+                <span style="background:var(--rose);color:#fff;font-size:11px;font-weight:600;padding:3px 9px;border-radius:40px">✦ Новая</span>
+              {% else %}
+                <span class="match-badge">{{ [94,88,82,79,76]|random }}% совпадение</span>
+              {% endif %}
+            </div>
+            <div class="job-title">{{ job.title }}</div>
+            <div class="job-co">{{ job.company.name }} · {{ job.city or 'Ташкент' }}</div>
+            <div class="tags">
+              {% for skill in job.get_skills()[:3] %}
+                <span class="tag">{{ skill }}</span>
+              {% endfor %}
+            </div>
+            <div class="job-foot">
+              <span class="salary">{{ job.salary_from or 'Договорная' }}</span>
+              <span class="loc">{% if job.format == 'Удалённо' %}🌐 Удалённо{% else %}📍 {{ job.city }}{% endif %}</span>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+
+      <div class="section-title-row">
+        <h3>Рекомендуемые курсы</h3>
+        <span class="see-all" onclick="showTab('courses')" style="cursor:pointer">Все курсы →</span>
+      </div>
+      <div class="home-courses-grid">
+        {% for course in courses[:4] %}
+        <div class="hc-card">
+          <div class="hc-thumb" style="background:{{ course.bg_color }}">{{ course.emoji }}</div>
+          <div class="hc-body">
+            <div class="hc-cat">{{ course.category }}</div>
+            <div class="hc-title">{{ course.title }}</div>
+            <div class="hc-meta">
+              <span class="hc-hours">{{ course.hours }} ч.</span>
+              {% if course.has_certificate %}<span class="cert-pip">✦ Серт.</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- COURSES TAB -->
+    <div id="tab-courses" class="tab-pane">
+      <div class="c-header">
+        <h2>Курсы и обучение</h2>
+        <p>Получите сертификаты и повысьте ценность своего профиля</p>
+      </div>
+      <div class="filter-row">
+        <div class="chip on">Все</div>
+        {% set cats = [] %}
+        {% for course in courses %}{% if course.category not in cats %}{% set _ = cats.append(course.category) %}{% endif %}{% endfor %}
+        {% for cat in cats %}
+          <div class="chip" onclick="toggleChip(this)">{{ cat }}</div>
+        {% endfor %}
+      </div>
+      <div class="courses-grid">
+        {% for course in courses %}
+        <div class="course-card">
+          <div class="c-thumb" style="background:{{ course.bg_color }}">{{ course.emoji }}</div>
+          <div class="c-body">
+            <div class="c-cat">{{ course.category }}</div>
+            <div class="c-title">{{ course.title }}</div>
+            <div class="c-meta">
+              <span>{{ course.hours }} ч. · {{ course.level }}</span>
+              {% if course.has_certificate %}<span class="cert-badge">✦ Сертификат</span>{% endif %}
+            </div>
+            {% set prog = enrollments.get(course.id, -1) %}
+            {% if prog >= 0 %}
+              <div class="prog-bar"><div class="prog-fill" style="width:{{ prog }}%"></div></div>
+              <form method="POST" action="{{ url_for('enroll_course', course_id=course.id) }}">
+                <button class="enroll-btn" type="submit">{% if prog > 0 %}Продолжить →{% else %}Начать →{% endif %}</button>
+              </form>
+            {% else %}
+              <div class="prog-bar"><div class="prog-fill" style="width:0%"></div></div>
+              <form method="POST" action="{{ url_for('enroll_course', course_id=course.id) }}">
+                <button class="enroll-btn" type="submit">Записаться →</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- BIOGRAPHIES TAB -->
+    <div id="tab-biographies" class="tab-pane">
+      <div class="c-header">
+        <h2>Истории успеха</h2>
+        <p>Вдохновляйтесь историями женщин Узбекистана</p>
+      </div>
+      <div class="bio-grid">
+        {% for bio in biographies %}
+        <div class="bio-card">
+          <div class="bio-av" style="background:{{ bio.bg_color }}">{{ bio.emoji }}</div>
+          <div class="bio-name">{{ bio.name }}</div>
+          <div class="bio-role">{{ bio.role }}{% if bio.company %} · {{ bio.company }}{% endif %}</div>
+          <div class="bio-quote">«{{ bio.quote }}»</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div id="tab-profile" class="tab-pane">
+      <div class="c-header">
+        <h2>Мой профиль</h2>
+        <p>Управляйте вашей информацией и видимостью</p>
+      </div>
+      <form method="POST" action="{{ url_for('update_profile') }}">
+        <div class="profile-layout">
+          <div>
+            <div class="prof-card">
+              <div class="prof-av">{{ (current_user.full_name or current_user.username)[0].upper() }}</div>
+              <div class="prof-name">{{ current_user.full_name or current_user.username }}</div>
+              <div class="prof-sub">{{ current_user.profession or 'Укажите профессию' }} · {{ current_user.city or 'Ташкент' }}</div>
+              <div style="display:flex;background:var(--cream);border-radius:9px;padding:3px;margin:.75rem 0">
+                <button type="button" class="type-btn {% if current_user.profile_type == 'anon' %}active{% endif %}"
+                  onclick="setProfType('anon',this)">Анонимный</button>
+                <button type="button" class="type-btn {% if current_user.profile_type == 'open' %}active{% endif %}"
+                  onclick="setProfType('open',this)">Открытый</button>
+              </div>
+              <input type="hidden" name="profile_type" id="profileTypeInput" value="{{ current_user.profile_type }}"/>
+              <div id="profDesc" style="font-size:11.5px;color:var(--warm-gray);margin-bottom:1rem">
+                {% if current_user.profile_type == 'anon' %}Имя и фото скрыты от работодателей{% else %}Ваше имя и фото видны работодателям{% endif %}
+              </div>
+              <div class="skills-lbl">Навыки</div>
+              <div class="skills-wrap">
+                {% for skill in current_user.get_skills() %}
+                  <span class="skill-pill">{{ skill }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="p-section">
+              <div class="p-sec-title">Основная информация</div>
+              <div class="form-grid">
+                <div class="form-row">
+                  <label class="form-label">Полное имя</label>
+                  <input class="form-input" type="text" name="full_name" value="{{ current_user.full_name or '' }}"/>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Город</label>
+                  <input class="form-input" type="text" name="city" value="{{ current_user.city or '' }}"/>
+                </div>
+              </div>
+              <div class="form-row">
+                <label class="form-label">Профессия / должность</label>
+                <input class="form-input" type="text" name="profession" value="{{ current_user.profession or '' }}"/>
+              </div>
+              <div class="form-row">
+                <label class="form-label">О себе</label>
+                <textarea class="form-input" name="bio" rows="3">{{ current_user.bio or '' }}</textarea>
+              </div>
+              <div class="form-row">
+                <label class="form-label">Навыки (через запятую)</label>
+                <input class="form-input" type="text" name="skills" value="{{ current_user.get_skills() | join(', ') }}"/>
+              </div>
+              <button class="btn btn-rose" type="submit">Сохранить профиль</button>
+            </div>
+
+            <div class="p-section">
+              <div class="p-sec-title">Мои отклики</div>
+              {% set apps = current_user.applications %}
+              {% if apps %}
+                {% for app in apps %}
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:.5px solid var(--border)">
+                    <div>
+                      <div style="font-size:13.5px;font-weight:500">{{ app.job.title }}</div>
+                      <div style="font-size:12px;color:var(--warm-gray)">{{ app.job.company.name }} · {{ app.created_at.strftime('%d.%m.%Y') }}</div>
+                    </div>
+                    <span style="background:var(--sage-light);color:var(--sage);font-size:11px;padding:3px 10px;border-radius:40px;font-weight:500">
+                      {% if app.status == 'pending' %}На рассмотрении{% elif app.status == 'viewed' %}Просмотрено{% elif app.status == 'accepted' %}Принято{% else %}Отклонено{% endif %}
+                    </span>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <div style="font-size:13px;color:var(--warm-gray);text-align:center;padding:1rem">Вы ещё не откликались на вакансии</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+  </main>
+</div>
+
+<style>
+.type-btn{flex:1;padding:5px 7px;border-radius:7px;font-size:12px;cursor:pointer;border:none;background:transparent;color:var(--warm-gray);font-family:'Outfit',sans-serif;transition:.15s}
+.type-btn.active{background:#fff;color:var(--dark);font-weight:500;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+</style>
+
+<script>
+const TABS = ['home','courses','biographies','profile'];
+function showTab(key, btn) {
+  TABS.forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t === key);
+  });
+  document.querySelectorAll('.sb-item').forEach(el => el.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+function toggleChip(el) { el.classList.toggle('on'); }
+function setProfType(type, btn) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('profileTypeInput').value = type;
+  document.getElementById('profDesc').textContent =
+    type === 'anon' ? 'Имя и фото скрыты от работодателей' : 'Ваше имя и фото видны работодателям';
+}
+</script>
+{% endblock %}

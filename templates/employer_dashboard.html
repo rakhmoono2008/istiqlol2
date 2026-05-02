@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% block title %}Работодатель{% endblock %}
+{% block extra_styles %}
+<style>
+/* ── Layout ── */
+.dash-wrap{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 58px)}
+.sidebar{background:#fff;border-right:.5px solid var(--border);padding:1.25rem .875rem;display:flex;flex-direction:column;gap:1.5rem;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
+.sb-user{display:flex;align-items:center;gap:10px;padding:.6rem .5rem}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--sage-light);color:var(--sage);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:14px;flex-shrink:0}
+.sb-name{font-size:14px;font-weight:500}
+.sb-role{font-size:12px;color:var(--warm-gray)}
+.verified-badge{display:inline-flex;align-items:center;gap:3px;background:#eff6ff;color:#1d6fa5;font-size:10px;font-weight:500;padding:2px 7px;border-radius:40px;margin-top:3px}
+.sb-nav{display:flex;flex-direction:column;gap:3px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:10px;font-size:14px;color:var(--warm-gray);cursor:pointer;transition:.15s;border:none;background:none;width:100%;text-align:left;font-family:'Outfit',sans-serif;text-decoration:none}
+.sb-item:hover{background:var(--cream);color:var(--dark)}
+.sb-item.active{background:var(--sage-light);color:var(--sage);font-weight:500}
+.sb-icon{font-size:15px;width:18px;text-align:center}
+.content{padding:2rem;background:var(--cream);overflow-y:auto}
+.tab-pane{display:none}.tab-pane.active{display:block}
+.c-header{margin-bottom:1.75rem;display:flex;justify-content:space-between;align-items:flex-start}
+.c-header h2{font-family:'DM Serif Display',serif;font-size:27px;margin-bottom:3px}
+.c-header p{font-size:13px;color:var(--warm-gray)}
+
+/* ── Stats ── */
+.emp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+.emp-stat{background:#fff;border:.5px solid var(--border);border-radius:13px;padding:1.2rem}
+.emp-stat-n{font-family:'DM Serif Display',serif;font-size:27px;margin-bottom:3px}
+.emp-stat-l{font-size:11.5px;color:var(--warm-gray)}
+
+/* ── Job list ── */
+.emp-section{background:#fff;border:.5px solid var(--border);border-radius:15px;overflow:hidden;margin-bottom:1.5rem}
+.emp-sec-head{padding:1rem 1.4rem;border-bottom:.5px solid var(--border);font-size:14.5px;font-weight:500;display:flex;justify-content:space-between;align-items:center}
+.job-row{padding:1rem 1.4rem;display:flex;justify-content:space-between;align-items:center;border-bottom:.5px solid #f5f3f0}
+.job-row:last-child{border-bottom:none}
+.active-badge{background:var(--sage-light);color:var(--sage);font-size:11.5px;font-weight:500;padding:3px 11px;border-radius:40px}
+.inactive-badge{background:#f5f3f0;color:var(--warm-gray);font-size:11.5px;font-weight:500;padding:3px 11px;border-radius:40px}
+
+/* ── Post form ── */
+.post-form-card{background:#fff;border:.5px solid var(--border);border-radius:18px;padding:1.75rem;max-width:720px}
+.post-form-title{font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:1.5rem}
+.form-label{font-size:12.5px;font-weight:500;color:var(--warm-gray);display:block;margin-bottom:5px}
+.form-input{width:100%;padding:10px 14px;border:.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:13.5px;background:var(--cream);outline:none;transition:border-color .15s;color:var(--dark)}
+.form-input:focus{border-color:var(--sage);background:#fff}
+.form-row{margin-bottom:1.1rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-wrap">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-user">
+      <div class="avatar">{{ company.name[0].upper() }}</div>
+      <div>
+        <div class="sb-name">{{ company.name }}</div>
+        <div class="sb-role">Работодатель</div>
+        {% if company.verified %}<div class="verified-badge">✓ Верифицировано</div>{% endif %}
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <button class="sb-item active" onclick="showTab('overview',this)"><span class="sb-icon">✦</span>Обзор</button>
+      <button class="sb-item" onclick="showTab('post',this)"><span class="sb-icon">＋</span>Добавить вакансию</button>
+      <button class="sb-item" onclick="showTab('jobs',this)"><span class="sb-icon">◈</span>Мои вакансии</button>
+      <a class="sb-item" href="{{ url_for('chat_list') }}"><span class="sb-icon">💬</span>Сообщения</a>
+    </nav>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- ОБЗОР -->
+    <div id="tab-overview" class="tab-pane active">
+      <div class="c-header">
+        <div>
+          <h2>Дашборд</h2>
+          <p>{{ company.city or 'Ташкент' }} · {{ company.industry or 'Компания' }}</p>
+        </div>
+        <button class="btn btn-sage" onclick="showTab('post', document.querySelector('.sb-item:nth-child(2)'))">+ Разместить вакансию</button>
+      </div>
+
+      <div class="emp-stats">
+        <div class="emp-stat">
+          <div class="emp-stat-n" style="color:var(--rose)">{{ active_jobs }}</div>
+          <div class="emp-stat-l">Активных вакансий</div>
+        </div>
+        <div class="emp-stat">
+          <div class="emp-stat-n" style="color:var(--sage)">{{ total_apps }}</div>
+          <div class="emp-stat-l">Всего откликов</div>
+        </div>
+        <div class="emp-stat">
+          <div class="emp-stat-n">{{ jobs|length }}</div>
+          <div class="emp-stat-l">Всего вакансий</div>
+        </div>
+        <div class="emp-stat">
+          <div class="emp-stat-n" style="color:var(--gold)">{{ total_apps }}</div>
+          <div class="emp-stat-l">На рассмотрении</div>
+        </div>
+      </div>
+
+      <div class="emp-section">
+        <div class="emp-sec-head">
+          Последние вакансии
+          <button class="btn btn-ghost" onclick="showTab('jobs', document.querySelector('.sb-item:nth-child(3)')); return false;" style="font-size:12px;padding:5px 14px">Все вакансии</button>
+        </div>
+        {% for job in jobs[:3] %}
+        <div class="job-row">
+          <div>
+            <div style="font-size:14.5px;font-weight:500;margin-bottom:3px">{{ job.title }}</div>
+            <div style="font-size:12px;color:var(--warm-gray)">{{ job.created_at.strftime('%d.%m.%Y') }} · {{ job.applications|length }} откликов · {{ job.format }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <a href="{{ url_for('job_applications', job_id=job.id) }}" class="btn btn-ghost" style="font-size:12px;padding:5px 12px">Смотреть отклики</a>
+            {% if job.is_active %}<span class="active-badge">Активна</span>{% else %}<span class="inactive-badge">Неактивна</span>{% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div style="padding:2.5rem;text-align:center;color:var(--warm-gray);font-size:13px">
+          Вы ещё не разместили ни одной вакансии.<br>
+          <button onclick="showTab('post', document.querySelector('.sb-item:nth-child(2)'))" class="btn btn-sage" style="margin-top:1rem">+ Разместить первую вакансию</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ДОБАВИТЬ ВАКАНСИЮ -->
+    <div id="tab-post" class="tab-pane">
+      <div class="c-header">
+        <div>
+          <h2>Новая вакансия</h2>
+          <p>Заполните форму — вакансия сразу появится в общем списке</p>
+        </div>
+      </div>
+      <div class="post-form-card">
+        <form method="POST" action="{{ url_for('post_job') }}">
+          <div class="form-grid" style="margin-bottom:1.1rem">
+            <div class="form-row">
+              <label class="form-label">Название должности *</label>
+              <input class="form-input" type="text" name="title" required placeholder="UX/UI Дизайнер"/>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Категория</label>
+              <select class="form-input" name="category">
+                <option>IT / Дизайн</option>
+                <option>Маркетинг</option>
+                <option>Финансы</option>
+                <option>HR</option>
+                <option>Образование</option>
+                <option>Медицина</option>
+                <option>Юриспруденция</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom:1.1rem">
+            <div class="form-row">
+              <label class="form-label">Зарплата (от)</label>
+              <input class="form-input" type="text" name="salary_from" placeholder="5 000 000 сум"/>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Формат работы</label>
+              <select class="form-input" name="format">
+                <option>Офис</option>
+                <option>Удалённо</option>
+                <option>Гибрид</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Описание вакансии</label>
+            <textarea class="form-input" name="description" rows="5" placeholder="Опишите обязанности, требования и условия работы..."></textarea>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Ключевые навыки (через запятую)</label>
+            <input class="form-input" type="text" name="skills" placeholder="Figma, Prototyping, User Research"/>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:1.25rem">
+            <button class="btn btn-sage" type="submit" style="padding:10px 28px">✓ Опубликовать вакансию</button>
+            <button type="button" class="btn btn-ghost" onclick="showTab('overview', document.querySelector('.sb-item:first-child'))">Отмена</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ВСЕ ВАКАНСИИ -->
+    <div id="tab-jobs" class="tab-pane">
+      <div class="c-header">
+        <div>
+          <h2>Мои вакансии</h2>
+          <p>{{ jobs|length }} вакансий · {{ active_jobs }} активных</p>
+        </div>
+        <button class="btn btn-sage" onclick="showTab('post', document.querySelector('.sb-item:nth-child(2)'))">+ Новая вакансия</button>
+      </div>
+      <div class="emp-section">
+        {% for job in jobs %}
+        <div class="job-row">
+          <div>
+            <div style="font-size:14.5px;font-weight:500;margin-bottom:4px">
+              {{ job.title }}
+              {% if job.is_active %}<span class="active-badge" style="margin-left:8px;font-size:10.5px">Активна</span>
+              {% else %}<span class="inactive-badge" style="margin-left:8px;font-size:10.5px">Неактивна</span>{% endif %}
+            </div>
+            <div style="font-size:12px;color:var(--warm-gray)">
+              {{ job.category }} · {{ job.format }} · {{ job.salary_from or 'Договорная' }} · Опубликовано {{ job.created_at.strftime('%d.%m.%Y') }}
+            </div>
+            <div style="font-size:12px;color:var(--warm-gray);margin-top:2px">{{ job.applications|length }} откликов</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <a href="{{ url_for('job_applications', job_id=job.id) }}" class="btn btn-ghost" style="font-size:12px;padding:6px 14px">📋 Отклики</a>
+            <form method="POST" action="{{ url_for('toggle_job', job_id=job.id) }}" style="display:inline">
+              <button class="btn btn-ghost" type="submit" style="font-size:12px;padding:6px 14px">
+                {% if job.is_active %}Деактивировать{% else %}Активировать{% endif %}
+              </button>
+            </form>
+          </div>
+        </div>
+        {% else %}
+        <div style="padding:3rem;text-align:center;color:var(--warm-gray)">Вакансий нет</div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function showTab(key, btn) {
+  document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + key).classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(el => el.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+// Если пришли после публикации вакансии - показать список
+{% if request.method == 'GET' and request.args.get('tab') == 'jobs' %}
+showTab('jobs', document.querySelector('.sb-item:nth-child(3)'));
+{% endif %}
+</script>
+{% endblock %}

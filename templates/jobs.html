@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Вакансии{% endblock %}
+{% block extra_styles %}
+<style>
+.page-wrap{max-width:1100px;margin:0 auto;padding:2rem}
+.page-header{margin-bottom:2rem}
+.page-header h1{font-family:'DM Serif Display',serif;font-size:36px;margin-bottom:5px}
+.page-header p{font-size:14px;color:var(--warm-gray)}
+.filter-row{display:flex;gap:8px;margin-bottom:1.75rem;flex-wrap:wrap}
+.chip{padding:5px 15px;border-radius:40px;font-size:13px;cursor:pointer;border:.5px solid var(--border);background:#fff;color:var(--warm-gray);transition:.15s;text-decoration:none;display:inline-block}
+.chip:hover,.chip.on{border-color:var(--rose);color:var(--rose);background:var(--rose-light)}
+.jobs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.job-card{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.2rem;transition:.2s;display:block;color:inherit;text-decoration:none}
+.job-card:hover{border-color:var(--rose);transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.06)}
+.job-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.7rem}
+.co-logo{width:42px;height:42px;border-radius:10px;background:var(--sage-light);display:flex;align-items:center;justify-content:center;font-size:18px}
+.format-badge{background:var(--cream);color:var(--warm-gray);font-size:11.5px;font-weight:500;padding:3px 9px;border-radius:40px;border:.5px solid var(--border)}
+.job-title{font-size:15px;font-weight:500;margin-bottom:3px}
+.job-co{font-size:12.5px;color:var(--warm-gray);margin-bottom:.65rem}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.65rem}
+.tag{background:var(--cream);border:.5px solid var(--border);border-radius:5px;padding:2px 9px;font-size:11.5px;color:var(--warm-gray)}
+.job-foot{display:flex;justify-content:space-between;align-items:center;border-top:.5px solid #f0ede8;padding-top:.65rem}
+.salary{font-size:14px;font-weight:500}
+.loc{font-size:12px;color:var(--warm-gray)}
+.job-new{border-color:var(--rose)!important;background:linear-gradient(to bottom right,#fff,#fdf5f3)}
+.job-new:hover{box-shadow:0 8px 26px rgba(232,133,106,.2)!important}
+.new-badge{background:var(--rose);color:#fff;font-size:11px;font-weight:600;padding:3px 9px;border-radius:40px;letter-spacing:.3px}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <div class="page-header">
+    <h1>Вакансии</h1>
+    <p>Найдите работу, соответствующую вашим навыкам</p>
+  </div>
+  <div class="filter-row">
+    <a class="chip {% if not current_category %}on{% endif %}" href="{{ url_for('jobs') }}">Все</a>
+    {% for cat in categories %}
+      <a class="chip {% if current_category == cat %}on{% endif %}" href="{{ url_for('jobs', category=cat) }}">{{ cat }}</a>
+    {% endfor %}
+    <a class="chip" href="{{ url_for('jobs', format='Удалённо') }}">🌐 Удалённо</a>
+    <a class="chip" href="{{ url_for('jobs', format='Гибрид') }}">🔄 Гибрид</a>
+  </div>
+  {% if jobs %}
+  <div class="jobs-grid">
+    {% for job in jobs %}
+    {% set days_old = (now - job.created_at).days %}
+    <a class="job-card {% if days_old <= 3 %}job-new{% endif %}" href="{{ url_for('job_detail', job_id=job.id) }}">
+      <div class="job-top">
+        <div class="co-logo">🏢</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          {% if days_old <= 3 %}<span class="new-badge">✦ Новая</span>{% endif %}
+          <span class="format-badge">{{ job.format or 'Офис' }}</span>
+        </div>
+      </div>
+      <div class="job-title">{{ job.title }}</div>
+      <div class="job-co">{{ job.company.name }} · {{ job.city or 'Ташкент' }}</div>
+      <div class="tags">
+        {% for skill in job.get_skills()[:3] %}<span class="tag">{{ skill }}</span>{% endfor %}
+      </div>
+      <div class="job-foot">
+        <span class="salary">{{ job.salary_from or 'Договорная' }}</span>
+        <span class="loc">{{ job.category or '' }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:4rem;color:var(--warm-gray)">Вакансии не найдены</div>
+  {% endif %}
+</div>
+{% endblock %}

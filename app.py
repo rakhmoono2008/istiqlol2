@@ -1,0 +1,725 @@
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+import os
+import json
+from datetime import datetime
+
+app = Flask(__name__)
+
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'istiqlol_secret_key_2026')
+app.config['REMEMBER_COOKIE_DURATION'] = 60 * 60 * 24 * 30
+app.config['PERMANENT_SESSION_LIFETIME'] = 60 * 60 * 24 * 30
+app.config['SESSION_PERMANENT'] = True
+
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql+pg8000://', 1)
+    elif database_url.startswith('postgresql://'):
+        database_url = database_url.replace('postgresql://', 'postgresql+pg8000://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    os.makedirs(os.path.join(basedir, 'database'), exist_ok=True)
+    db_path = os.path.join(basedir, 'database', 'database.db').replace('\\', '/')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True, 'pool_recycle': 300}
+
+if os.environ.get('RAILWAY_ENVIRONMENT'):
+    upload_folder = '/app/uploads'
+    backup_folder = '/app/backups'
+else:
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    upload_folder = os.path.join(basedir, 'uploads')
+    backup_folder = os.path.join(basedir, 'backups')
+
+os.makedirs(upload_folder, exist_ok=True)
+os.makedirs(backup_folder, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = upload_folder
+app.config['BACKUP_FOLDER'] = backup_folder
+ALLOWED_EXTENSIONS = {'pdf', 'docx', 'png', 'jpg', 'jpeg', 'gif'}
+
+db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Пожалуйста, войдите для доступа к этой странице'
+
+# ===== МОДЕЛИ =====
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    full_name = db.Column(db.String(150))
+    email = db.Column(db.String(120), unique=True)
+    password_hash = db.Column(db.String(512), nullable=False)
+    role = db.Column(db.String(20), default='seeker')  # seeker, employer, admin
+    city = db.Column(db.String(100))
+    profession = db.Column(db.String(200))
+    profile_type = db.Column(db.String(20), default='open')  # open, anon
+    skills = db.Column(db.Text)  # JSON list
+    bio = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
+
+    @property
+    def is_employer(self):
+        return self.role == 'employer'
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def get_skills(self):
+        if self.skills:
+            try:
+                return json.loads(self.skills)
+            except:
+                return []
+        return []
+
+class Company(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    city = db.Column(db.String(100))
+    industry = db.Column(db.String(100))
+    verified = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='company')
+
+class Job(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    salary_from = db.Column(db.String(100))
+    salary_to = db.Column(db.String(100))
+    format = db.Column(db.String(50))  # Офис, Удалённо, Гибрид
+    city = db.Column(db.String(100))
+    skills_required = db.Column(db.Text)  # JSON list
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    company = db.relationship('Company', backref='jobs')
+
+    def get_skills(self):
+        if self.skills_required:
+            try:
+                return json.loads(self.skills_required)
+            except:
+                return []
+        return []
+
+class Application(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    cover_letter = db.Column(db.Text)
+    status = db.Column(db.String(30), default='pending')  # pending, viewed, accepted, rejected
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    job = db.relationship('Job', backref='applications')
+    user = db.relationship('User', backref='applications')
+
+class Course(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    hours = db.Column(db.Integer)
+    level = db.Column(db.String(50))  # Начальный, Средний, Продвинутый
+    has_certificate = db.Column(db.Boolean, default=True)
+    emoji = db.Column(db.String(10), default='📚')
+    bg_color = db.Column(db.String(20), default='#FDF0EC')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class CourseEnrollment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    progress = db.Column(db.Integer, default=0)  # 0-100
+    enrolled_at = db.Column(db.DateTime, default=datetime.utcnow)
+    course = db.relationship('Course', backref='enrollments')
+    user = db.relationship('User', backref='enrollments')
+
+class Biography(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(200))
+    company = db.Column(db.String(200))
+    quote = db.Column(db.Text)
+    emoji = db.Column(db.String(10), default='👩‍💼')
+    bg_color = db.Column(db.String(20), default='#FDF0EC')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_messages')
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, int(user_id))
+
+# ===== HELPERS =====
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def admin_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != 'admin':
+            flash('Доступ запрещён. Требуются права администратора.', 'danger')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def backup_to_json():
+    try:
+        users_data = [{'id': u.id, 'username': u.username, 'full_name': u.full_name,
+                       'password_hash': u.password_hash, 'role': u.role}
+                      for u in User.query.all()]
+        with open(os.path.join(app.config['BACKUP_FOLDER'], 'users.json'), 'w', encoding='utf-8') as f:
+            json.dump(users_data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"❌ Ошибка бэкапа: {e}")
+
+# ===== МАРШРУТЫ =====
+
+@app.route('/')
+def index():
+    jobs_count = Job.query.filter_by(is_active=True).count()
+    seekers_count = User.query.filter_by(role='seeker').count()
+    companies_count = Company.query.filter_by(verified=True).count()
+    courses_count = Course.query.count()
+    return render_template('index.html',
+                           jobs_count=jobs_count,
+                           seekers_count=seekers_count,
+                           companies_count=companies_count,
+                           courses_count=courses_count)
+
+# --- Авторизация ---
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            login_user(user, remember=True)
+            flash(f'Добро пожаловать, {user.full_name or user.username}!', 'success')
+            next_page = request.args.get('next')
+            return redirect(next_page if next_page else url_for('dashboard'))
+        flash('Неверное имя пользователя или пароль', 'danger')
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        full_name = request.form.get('full_name', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        role = request.form.get('role', 'seeker')
+
+        if not username or not password:
+            flash('Заполните все поля', 'danger')
+            return render_template('register.html')
+        if password != confirm_password:
+            flash('Пароли не совпадают', 'danger')
+            return render_template('register.html')
+        if User.query.filter_by(username=username).first():
+            flash('Такое имя пользователя уже существует', 'danger')
+            return render_template('register.html')
+
+        user = User(username=username, full_name=full_name, email=email,
+                    password_hash=generate_password_hash(password), role=role)
+        db.session.add(user)
+        db.session.flush()
+
+        if role == 'employer':
+            company_name = request.form.get('company_name', '').strip() or full_name
+            company = Company(user_id=user.id, name=company_name,
+                              city=request.form.get('city', ''))
+            db.session.add(company)
+
+        db.session.commit()
+        backup_to_json()
+        login_user(user, remember=True)
+        flash('Регистрация успешна!', 'success')
+        return redirect(url_for('dashboard'))
+    return render_template('register.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('Вы вышли из системы', 'info')
+    return redirect(url_for('index'))
+
+# --- Дашборд ---
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    if current_user.role == 'employer':
+        return redirect(url_for('employer_dashboard'))
+    if current_user.role == 'admin':
+        return redirect(url_for('admin_panel'))
+
+    # Соискатель
+    all_jobs = Job.query.filter_by(is_active=True).order_by(Job.created_at.desc()).all()
+    courses = Course.query.all()
+    biographies = Biography.query.all()
+
+    user_skills = current_user.get_skills()
+    my_applications = Application.query.filter_by(user_id=current_user.id).all()
+    applied_job_ids = {a.job_id for a in my_applications}
+
+    enrollments = {e.course_id: e.progress for e in
+                   CourseEnrollment.query.filter_by(user_id=current_user.id).all()}
+
+    return render_template('seeker_dashboard.html',
+                           jobs=all_jobs,
+                           courses=courses,
+                           biographies=biographies,
+                           user_skills=user_skills,
+                           applied_job_ids=applied_job_ids,
+                           enrollments=enrollments,
+                           now=datetime.utcnow())
+
+# --- Вакансии ---
+@app.route('/jobs')
+def jobs():
+    category = request.args.get('category')
+    format_ = request.args.get('format')
+    city = request.args.get('city')
+    query = Job.query.filter_by(is_active=True)
+    if category:
+        query = query.filter_by(category=category)
+    if format_:
+        query = query.filter_by(format=format_)
+    if city:
+        query = query.filter_by(city=city)
+    jobs = query.order_by(Job.created_at.desc()).all()
+    categories = [c[0] for c in db.session.query(Job.category).distinct().all() if c[0]]
+    return render_template('jobs.html', jobs=jobs, categories=categories,
+                           current_category=category, now=datetime.utcnow())
+
+@app.route('/jobs/<int:job_id>')
+def job_detail(job_id):
+    job = Job.query.get_or_404(job_id)
+    applied = False
+    if current_user.is_authenticated:
+        applied = Application.query.filter_by(job_id=job_id, user_id=current_user.id).first() is not None
+    return render_template('job_detail.html', job=job, applied=applied)
+
+@app.route('/jobs/<int:job_id>/apply', methods=['POST'])
+@login_required
+def apply_job(job_id):
+    if current_user.role != 'seeker':
+        flash('Только соискатели могут откликаться на вакансии', 'danger')
+        return redirect(url_for('job_detail', job_id=job_id))
+    if Application.query.filter_by(job_id=job_id, user_id=current_user.id).first():
+        flash('Вы уже откликались на эту вакансию', 'warning')
+        return redirect(url_for('job_detail', job_id=job_id))
+    app_obj = Application(job_id=job_id, user_id=current_user.id,
+                          cover_letter=request.form.get('cover_letter', ''))
+    db.session.add(app_obj)
+    db.session.commit()
+    flash('✅ Отклик отправлен!', 'success')
+    return redirect(url_for('job_detail', job_id=job_id))
+
+# --- Курсы ---
+@app.route('/courses')
+def courses():
+    category = request.args.get('category')
+    query = Course.query
+    if category:
+        query = query.filter_by(category=category)
+    courses = query.all()
+    categories = [c[0] for c in db.session.query(Course.category).distinct().all() if c[0]]
+    enrollments = {}
+    if current_user.is_authenticated:
+        enrollments = {e.course_id: e.progress for e in
+                       CourseEnrollment.query.filter_by(user_id=current_user.id).all()}
+    return render_template('courses.html', courses=courses, categories=categories,
+                           current_category=category, enrollments=enrollments)
+
+@app.route('/courses/<int:course_id>/enroll', methods=['POST'])
+@login_required
+def enroll_course(course_id):
+    course = Course.query.get_or_404(course_id)
+    existing = CourseEnrollment.query.filter_by(course_id=course_id, user_id=current_user.id).first()
+    if existing:
+        flash('Вы уже записаны на этот курс', 'info')
+    else:
+        enrollment = CourseEnrollment(course_id=course_id, user_id=current_user.id)
+        db.session.add(enrollment)
+        db.session.commit()
+        flash(f'✅ Вы записались на курс «{course.title}»!', 'success')
+    return redirect(url_for('courses'))
+
+# --- Биографии ---
+@app.route('/biographies')
+def biographies():
+    bios = Biography.query.all()
+    return render_template('biographies.html', biographies=bios)
+
+# --- Профиль ---
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html')
+
+@app.route('/profile/update', methods=['POST'])
+@login_required
+def update_profile():
+    current_user.full_name = request.form.get('full_name', '').strip()
+    current_user.city = request.form.get('city', '').strip()
+    current_user.profession = request.form.get('profession', '').strip()
+    current_user.bio = request.form.get('bio', '').strip()
+    current_user.profile_type = request.form.get('profile_type', 'open')
+    skills_raw = request.form.get('skills', '')
+    skills_list = [s.strip() for s in skills_raw.split(',') if s.strip()]
+    current_user.skills = json.dumps(skills_list, ensure_ascii=False)
+    db.session.commit()
+    flash('Профиль обновлён', 'success')
+    return redirect(url_for('profile'))
+
+# --- Работодатель ---
+@app.route('/employer')
+@login_required
+def employer_dashboard():
+    if current_user.role not in ('employer', 'admin'):
+        flash('Доступ только для работодателей', 'danger')
+        return redirect(url_for('index'))
+    company = Company.query.filter_by(user_id=current_user.id).first()
+    if not company:
+        company = Company(user_id=current_user.id,
+                          name=current_user.full_name or current_user.username)
+        db.session.add(company)
+        db.session.commit()
+    jobs = Job.query.filter_by(company_id=company.id).order_by(Job.created_at.desc()).all()
+    total_apps = sum(len(j.applications) for j in jobs)
+    active_jobs = sum(1 for j in jobs if j.is_active)
+    return render_template('employer_dashboard.html', company=company,
+                           jobs=jobs, total_apps=total_apps, active_jobs=active_jobs)
+
+@app.route('/employer/post', methods=['POST'])
+@login_required
+def post_job():
+    if current_user.role not in ('employer', 'admin'):
+        flash('Доступ только для работодателей', 'danger')
+        return redirect(url_for('index'))
+    company = Company.query.filter_by(user_id=current_user.id).first()
+    if not company:
+        flash('Сначала создайте профиль компании', 'danger')
+        return redirect(url_for('employer_dashboard'))
+    skills_raw = request.form.get('skills', '')
+    skills_list = [s.strip() for s in skills_raw.split(',') if s.strip()]
+    job = Job(
+        company_id=company.id,
+        title=request.form.get('title', '').strip(),
+        category=request.form.get('category', ''),
+        description=request.form.get('description', ''),
+        salary_from=request.form.get('salary_from', ''),
+        format=request.form.get('format', 'Офис'),
+        city=company.city or '',
+        skills_required=json.dumps(skills_list, ensure_ascii=False)
+    )
+    db.session.add(job)
+    db.session.commit()
+    flash('✅ Вакансия опубликована!', 'success')
+    return redirect(url_for('employer_dashboard'))
+
+@app.route('/employer/job/<int:job_id>/toggle', methods=['POST'])
+@login_required
+def toggle_job(job_id):
+    job = Job.query.get_or_404(job_id)
+    company = Company.query.filter_by(user_id=current_user.id).first()
+    if not company or job.company_id != company.id:
+        flash('Нет прав', 'danger')
+        return redirect(url_for('employer_dashboard'))
+    job.is_active = not job.is_active
+    db.session.commit()
+    flash('Статус вакансии изменён', 'success')
+    return redirect(url_for('employer_dashboard'))
+
+@app.route('/employer/job/<int:job_id>/applications')
+@login_required
+def job_applications(job_id):
+    job = Job.query.get_or_404(job_id)
+    company = Company.query.filter_by(user_id=current_user.id).first()
+    if not company or job.company_id != company.id:
+        flash('Нет прав', 'danger')
+        return redirect(url_for('employer_dashboard'))
+    return render_template('job_applications.html', job=job)
+
+# --- Чат ---
+@app.route('/chat')
+@login_required
+def chat_list():
+    users = User.query.filter(User.id != current_user.id).order_by(User.username).all()
+    conversations = []
+    for user in users:
+        last_msg = Message.query.filter(
+            ((Message.sender_id == current_user.id) & (Message.receiver_id == user.id)) |
+            ((Message.sender_id == user.id) & (Message.receiver_id == current_user.id))
+        ).order_by(Message.created_at.desc()).first()
+        unread = Message.query.filter_by(
+            sender_id=user.id, receiver_id=current_user.id, is_read=False).count()
+        if last_msg:
+            conversations.append({'user': user, 'last_msg': last_msg, 'unread': unread})
+    conversations.sort(key=lambda x: x['last_msg'].created_at, reverse=True)
+    return render_template('chat_list.html', conversations=conversations)
+
+@app.route('/chat/<int:user_id>')
+@login_required
+def chat_room(user_id):
+    other_user = User.query.get_or_404(user_id)
+    Message.query.filter_by(
+        sender_id=user_id, receiver_id=current_user.id, is_read=False
+    ).update({'is_read': True})
+    db.session.commit()
+    messages = Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
+        ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id))
+    ).order_by(Message.created_at.asc()).all()
+    return render_template('chat_room.html', other_user=other_user, messages=messages)
+
+@app.route('/chat/send', methods=['POST'])
+@login_required
+def chat_send():
+    data = request.get_json()
+    receiver_id = data.get('receiver_id')
+    content = data.get('content', '').strip()
+    if not content or not receiver_id:
+        return jsonify({'error': 'invalid'}), 400
+    msg = Message(sender_id=current_user.id, receiver_id=receiver_id, content=content)
+    db.session.add(msg)
+    db.session.commit()
+    return jsonify({'id': msg.id, 'content': msg.content,
+                    'sender_id': current_user.id,
+                    'sender_name': current_user.full_name or current_user.username,
+                    'created_at': msg.created_at.strftime('%H:%M')})
+
+@app.route('/chat/poll/<int:user_id>')
+@login_required
+def chat_poll(user_id):
+    after_id = request.args.get('after', 0, type=int)
+    messages = Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
+        ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id)),
+        Message.id > after_id
+    ).order_by(Message.created_at.asc()).all()
+    Message.query.filter_by(sender_id=user_id, receiver_id=current_user.id,
+                             is_read=False).update({'is_read': True})
+    db.session.commit()
+    return jsonify([{'id': m.id, 'content': m.content,
+                     'sender_id': m.sender_id,
+                     'created_at': m.created_at.strftime('%H:%M')} for m in messages])
+
+@app.route('/chat/unread_count')
+@login_required
+def unread_count():
+    count = Message.query.filter_by(receiver_id=current_user.id, is_read=False).count()
+    return jsonify({'count': count})
+
+# --- Админ-панель ---
+@app.route('/admin')
+@login_required
+@admin_required
+def admin_panel():
+    stats = {
+        'users': User.query.count(),
+        'jobs': Job.query.count(),
+        'courses': Course.query.count(),
+        'companies': Company.query.count(),
+        'user_list': User.query.order_by(User.created_at.desc()).all()
+    }
+    return render_template('admin.html', stats=stats)
+
+@app.route('/admin/biographies/add', methods=['POST'])
+@login_required
+@admin_required
+def add_biography():
+    bio = Biography(
+        name=request.form.get('name', ''),
+        role=request.form.get('role', ''),
+        company=request.form.get('company', ''),
+        quote=request.form.get('quote', ''),
+        emoji=request.form.get('emoji', '👩‍💼'),
+        bg_color=request.form.get('bg_color', '#FDF0EC')
+    )
+    db.session.add(bio)
+    db.session.commit()
+    flash('Биография добавлена', 'success')
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/courses/add', methods=['POST'])
+@login_required
+@admin_required
+def add_course():
+    course = Course(
+        title=request.form.get('title', ''),
+        category=request.form.get('category', ''),
+        description=request.form.get('description', ''),
+        hours=request.form.get('hours', 0, type=int),
+        level=request.form.get('level', 'Начальный'),
+        emoji=request.form.get('emoji', '📚'),
+        bg_color=request.form.get('bg_color', '#FDF0EC')
+    )
+    db.session.add(course)
+    db.session.commit()
+    flash('Курс добавлен', 'success')
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/users/<int:user_id>/toggle_role', methods=['POST'])
+@login_required
+@admin_required
+def toggle_user_role(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.id == current_user.id:
+        flash('Нельзя изменить свою роль', 'danger')
+    else:
+        user.role = 'user' if user.role == 'admin' else 'admin'
+        db.session.commit()
+        flash(f'Роль пользователя {user.username} изменена', 'success')
+    return redirect(url_for('admin_panel'))
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+# ===== ИНИЦИАЛИЗАЦИЯ =====
+def seed_data():
+    """Начальные данные"""
+    # Биографии
+    if Biography.query.count() == 0:
+        bios = [
+            Biography(name='Нилуфар Рашидова', role='CEO', company='TechUz Solutions',
+                      quote='Главное — не бояться начинать. Каждая ошибка — это урок',
+                      emoji='👩‍💼', bg_color='#FDF0EC'),
+            Biography(name='Дилрабо Юсупова', role='Data Scientist', company='AI Lab UZ',
+                      quote='Технологии не имеют пола. Только знания имеют значение',
+                      emoji='👩‍🔬', bg_color='#EAF3EE'),
+            Biography(name='Камола Азимова', role='Creative Director', company='Adept Agency',
+                      quote='Творчество открыло мне двери, которые я не могла найти',
+                      emoji='👩‍🎨', bg_color='#FBF4E8'),
+            Biography(name='Зулайхо Мирзаева', role='Chief Medical Officer', company='UZ Health',
+                      quote='Образование — единственное, что нельзя отнять',
+                      emoji='👩‍⚕️', bg_color='#F0EBF8'),
+            Biography(name='Муаззам Хасанова', role='CTO', company='Startup Hub Tashkent',
+                      quote='Код не делает различий между мужчинами и женщинами',
+                      emoji='👩‍💻', bg_color='#FDF0EC'),
+            Biography(name='Барно Турсунова', role='Professor', company='TUIT University',
+                      quote='Я учу следующее поколение вдохновлённых женщин',
+                      emoji='👩‍🏫', bg_color='#EAF3EE'),
+        ]
+        db.session.add_all(bios)
+
+    # Курсы
+    if Course.query.count() == 0:
+        courses = [
+            Course(title='UX Research & Design', category='Дизайн', hours=42,
+                   level='Средний', emoji='🎨', bg_color='#FDF0EC'),
+            Course(title='Python для аналитиков данных', category='Программирование',
+                   hours=60, level='С нуля', emoji='💻', bg_color='#EAF3EE'),
+            Course(title='Digital Marketing Pro', category='Маркетинг',
+                   hours=35, level='Средний', emoji='📊', bg_color='#FBF4E8'),
+            Course(title='Лидерство для женщин', category='Лидерство',
+                   hours=18, level='Начальный', emoji='🗣️', bg_color='#F0EBF8'),
+            Course(title='Финансовая грамотность', category='Финансы',
+                   hours=24, level='Начальный', emoji='📈', bg_color='#EAF3EE'),
+            Course(title='Управление персоналом', category='HR',
+                   hours=48, level='Средний', emoji='🤝', bg_color='#FDF0EC'),
+            Course(title='Основы облачных технологий', category='IT',
+                   hours=30, level='Начальный', emoji='☁️', bg_color='#EFF6FF'),
+            Course(title='Свой бизнес с нуля', category='Предпринимательство',
+                   hours=52, level='Средний', emoji='🧠', bg_color='#FBF4E8'),
+            Course(title='Деловой английский', category='Языки',
+                   hours=40, level='Средний', emoji='🌐', bg_color='#EAF3EE'),
+        ]
+        db.session.add_all(courses)
+
+    db.session.commit()
+
+with app.app_context():
+    try:
+        db.create_all()
+        # Создать администратора
+        if not User.query.filter_by(username='admin').first():
+            admin = User(username='admin', full_name='Администратор',
+                         password_hash=generate_password_hash('admin123'), role='admin')
+            db.session.add(admin)
+            db.session.commit()
+            print("=" * 50)
+            print("✅ Администратор создан: admin / admin123")
+            print("=" * 50)
+        # Демо работодатель
+        if not User.query.filter_by(username='click').first():
+            emp = User(username='click', full_name='Click Technologies',
+                       password_hash=generate_password_hash('click123'), role='employer')
+            db.session.add(emp)
+            db.session.flush()
+            company = Company(user_id=emp.id, name='Click Technologies',
+                              city='Ташкент', industry='IT', verified=True)
+            db.session.add(company)
+            db.session.flush()
+            # Демо вакансии
+            skills1 = json.dumps(['Figma', 'Mobile', 'Research'])
+            skills2 = json.dumps(['Prototyping', 'User Testing'])
+            skills3 = json.dumps(['Digital', 'SMM', 'Analytics'])
+            jobs = [
+                Job(company_id=company.id, title='UX/UI Дизайнер',
+                    category='IT / Дизайн', salary_from='5 000 000',
+                    format='Офис', city='Ташкент', skills_required=skills1,
+                    description='Ищем опытного UX/UI дизайнера для работы над мобильными приложениями.'),
+                Job(company_id=company.id, title='Product Designer',
+                    category='IT / Дизайн', salary_from='$800',
+                    format='Удалённо', city='Ташкент', skills_required=skills2,
+                    description='Создавайте продуктовый дизайн для миллионов пользователей.'),
+                Job(company_id=company.id, title='Marketing Manager',
+                    category='Маркетинг', salary_from='4 000 000',
+                    format='Гибрид', city='Ташкент', skills_required=skills3,
+                    description='Развивайте digital-направление нашей компании.'),
+            ]
+            db.session.add_all(jobs)
+            db.session.commit()
+        # Демо соискатель
+        if not User.query.filter_by(username='malika').first():
+            seeker = User(username='malika', full_name='Малика Азимова',
+                          password_hash=generate_password_hash('malika123'), role='seeker',
+                          city='Ташкент', profession='UX Designer',
+                          skills=json.dumps(['Figma', 'UX Research', 'Prototyping', 'Wireframing']))
+            db.session.add(seeker)
+            db.session.commit()
+        seed_data()
+        backup_to_json()
+    except Exception as e:
+        print(f"⚠️ Ошибка инициализации: {e}")
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    print("🚀 Istiqlol запускается...")
+    app.run(debug=True, host='0.0.0.0', port=port)
