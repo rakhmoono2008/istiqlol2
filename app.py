@@ -849,7 +849,9 @@ def seed_data():
 with app.app_context():
     try:
         db.create_all()
-        # Создать администратора
+        # Сначала восстанавливаем из бэкапа (если есть)
+        restore_from_json()
+        # Создать администратора если не существует
         if not User.query.filter_by(username='admin').first():
             admin = User(username='admin', full_name='Администратор',
                          password_hash=generate_password_hash('admin123'), role='admin')
@@ -868,7 +870,6 @@ with app.app_context():
                               city='Ташкент', industry='IT', verified=True)
             db.session.add(company)
             db.session.flush()
-            # Демо вакансии
             skills1 = json.dumps(['Figma', 'Mobile', 'Research'])
             skills2 = json.dumps(['Prototyping', 'User Testing'])
             skills3 = json.dumps(['Digital', 'SMM', 'Analytics'])
