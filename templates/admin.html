@@ -1,5 +1,61 @@
 {% extends 'base.html' %}
-{% block title %}Администратор{% endblock %}
+{% block title %}Администратор
+  <!-- ВЕРИФИКАЦИЯ КОМПАНИЙ -->
+  {% set pending = [] %}
+  {% for u in stats.user_list %}
+    {% if u.role == 'employer' and u.company %}
+      {% if not u.company.verified %}
+        {% set vr = u.company.verification_requests | selectattr('status','eq','pending') | list %}
+        {% if vr %}
+          {% set _ = pending.append({'company': u.company, 'vr': vr[0]}) %}
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  <div class="admin-section">
+    <div class="sec-head">
+      Заявки на верификацию
+      {% set cnt = stats.user_list | selectattr('role','eq','employer') | list | length %}
+      <span style="font-size:12px;color:var(--warm-gray)">{{ cnt }} компаний</span>
+    </div>
+    {% for u in stats.user_list %}
+      {% if u.role == 'employer' and u.company %}
+        {% for vr in u.company.verification_requests %}
+          {% if vr.status == 'pending' %}
+          <div class="user-row">
+            <div>
+              <div style="font-size:14px;font-weight:500">{{ u.company.name }}
+                {% if u.company.verified %}<span style="color:var(--sage);font-size:12px">✓ верифицирована</span>{% endif %}
+              </div>
+              <div style="font-size:12px;color:var(--warm-gray)">{{ u.company.city or '' }} · {{ u.company.industry or '' }} · Заявка от {{ vr.created_at.strftime('%d.%m.%Y') }}</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <form method="POST" action="{{ url_for('verify_company', company_id=u.company.id) }}">
+                <input type="hidden" name="action" value="approve"/>
+                <button class="btn btn-sage" type="submit" style="font-size:12px;padding:5px 14px">✓ Верифицировать</button>
+              </form>
+              <form method="POST" action="{{ url_for('verify_company', company_id=u.company.id) }}">
+                <input type="hidden" name="action" value="reject"/>
+                <button class="btn btn-ghost" type="submit" style="font-size:12px;padding:5px 14px;color:#dc2626;border-color:#dc2626">✕ Отклонить</button>
+              </form>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+    {% set has_pending = namespace(val=false) %}
+    {% for u in stats.user_list %}
+      {% if u.role == 'employer' and u.company %}
+        {% for vr in u.company.verification_requests %}{% if vr.status == 'pending' %}{% set has_pending.val = true %}{% endif %}{% endfor %}
+      {% endif %}
+    {% endfor %}
+    {% if not has_pending.val %}
+    <div style="padding:1.5rem;text-align:center;font-size:13px;color:var(--warm-gray)">Нет заявок на верификацию</div>
+    {% endif %}
+  </div>
+
+{% endblock %}
 {% block extra_styles %}
 <style>
 .page-wrap{max-width:1100px;margin:0 auto;padding:2rem}
@@ -21,6 +77,62 @@
 .form-input:focus{border-color:var(--rose);background:#fff}
 .fg{display:grid;gap:.75rem;grid-template-columns:repeat(3,1fr) auto;align-items:end;margin-bottom:0}
 </style>
+
+  <!-- ВЕРИФИКАЦИЯ КОМПАНИЙ -->
+  {% set pending = [] %}
+  {% for u in stats.user_list %}
+    {% if u.role == 'employer' and u.company %}
+      {% if not u.company.verified %}
+        {% set vr = u.company.verification_requests | selectattr('status','eq','pending') | list %}
+        {% if vr %}
+          {% set _ = pending.append({'company': u.company, 'vr': vr[0]}) %}
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  <div class="admin-section">
+    <div class="sec-head">
+      Заявки на верификацию
+      {% set cnt = stats.user_list | selectattr('role','eq','employer') | list | length %}
+      <span style="font-size:12px;color:var(--warm-gray)">{{ cnt }} компаний</span>
+    </div>
+    {% for u in stats.user_list %}
+      {% if u.role == 'employer' and u.company %}
+        {% for vr in u.company.verification_requests %}
+          {% if vr.status == 'pending' %}
+          <div class="user-row">
+            <div>
+              <div style="font-size:14px;font-weight:500">{{ u.company.name }}
+                {% if u.company.verified %}<span style="color:var(--sage);font-size:12px">✓ верифицирована</span>{% endif %}
+              </div>
+              <div style="font-size:12px;color:var(--warm-gray)">{{ u.company.city or '' }} · {{ u.company.industry or '' }} · Заявка от {{ vr.created_at.strftime('%d.%m.%Y') }}</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <form method="POST" action="{{ url_for('verify_company', company_id=u.company.id) }}">
+                <input type="hidden" name="action" value="approve"/>
+                <button class="btn btn-sage" type="submit" style="font-size:12px;padding:5px 14px">✓ Верифицировать</button>
+              </form>
+              <form method="POST" action="{{ url_for('verify_company', company_id=u.company.id) }}">
+                <input type="hidden" name="action" value="reject"/>
+                <button class="btn btn-ghost" type="submit" style="font-size:12px;padding:5px 14px;color:#dc2626;border-color:#dc2626">✕ Отклонить</button>
+              </form>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+    {% set has_pending = namespace(val=false) %}
+    {% for u in stats.user_list %}
+      {% if u.role == 'employer' and u.company %}
+        {% for vr in u.company.verification_requests %}{% if vr.status == 'pending' %}{% set has_pending.val = true %}{% endif %}{% endfor %}
+      {% endif %}
+    {% endfor %}
+    {% if not has_pending.val %}
+    <div style="padding:1.5rem;text-align:center;font-size:13px;color:var(--warm-gray)">Нет заявок на верификацию</div>
+    {% endif %}
+  </div>
+
 {% endblock %}
 {% block content %}
 <div class="page-wrap">
@@ -120,4 +232,60 @@
     </div>
   </div>
 </div>
+
+  <!-- ВЕРИФИКАЦИЯ КОМПАНИЙ -->
+  {% set pending = [] %}
+  {% for u in stats.user_list %}
+    {% if u.role == 'employer' and u.company %}
+      {% if not u.company.verified %}
+        {% set vr = u.company.verification_requests | selectattr('status','eq','pending') | list %}
+        {% if vr %}
+          {% set _ = pending.append({'company': u.company, 'vr': vr[0]}) %}
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  <div class="admin-section">
+    <div class="sec-head">
+      Заявки на верификацию
+      {% set cnt = stats.user_list | selectattr('role','eq','employer') | list | length %}
+      <span style="font-size:12px;color:var(--warm-gray)">{{ cnt }} компаний</span>
+    </div>
+    {% for u in stats.user_list %}
+      {% if u.role == 'employer' and u.company %}
+        {% for vr in u.company.verification_requests %}
+          {% if vr.status == 'pending' %}
+          <div class="user-row">
+            <div>
+              <div style="font-size:14px;font-weight:500">{{ u.company.name }}
+                {% if u.company.verified %}<span style="color:var(--sage);font-size:12px">✓ верифицирована</span>{% endif %}
+              </div>
+              <div style="font-size:12px;color:var(--warm-gray)">{{ u.company.city or '' }} · {{ u.company.industry or '' }} · Заявка от {{ vr.created_at.strftime('%d.%m.%Y') }}</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <form method="POST" action="{{ url_for('verify_company', company_id=u.company.id) }}">
+                <input type="hidden" name="action" value="approve"/>
+                <button class="btn btn-sage" type="submit" style="font-size:12px;padding:5px 14px">✓ Верифицировать</button>
+              </form>
+              <form method="POST" action="{{ url_for('verify_company', company_id=u.company.id) }}">
+                <input type="hidden" name="action" value="reject"/>
+                <button class="btn btn-ghost" type="submit" style="font-size:12px;padding:5px 14px;color:#dc2626;border-color:#dc2626">✕ Отклонить</button>
+              </form>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+    {% set has_pending = namespace(val=false) %}
+    {% for u in stats.user_list %}
+      {% if u.role == 'employer' and u.company %}
+        {% for vr in u.company.verification_requests %}{% if vr.status == 'pending' %}{% set has_pending.val = true %}{% endif %}{% endfor %}
+      {% endif %}
+    {% endfor %}
+    {% if not has_pending.val %}
+    <div style="padding:1.5rem;text-align:center;font-size:13px;color:var(--warm-gray)">Нет заявок на верификацию</div>
+    {% endif %}
+  </div>
+
 {% endblock %}
