@@ -2,13 +2,14 @@
 {% block title %}Мой профиль{% endblock %}
 {% block extra_styles %}
 <style>
-.page-wrap{max-width:900px;margin:0 auto;padding:2rem}
+.page-wrap{max-width:920px;margin:0 auto;padding:2rem}
 .page-header{margin-bottom:1.75rem}
 .page-header h1{font-family:'DM Serif Display',serif;font-size:30px;margin-bottom:3px}
 .page-header p{font-size:13px;color:var(--warm-gray)}
-.profile-layout{display:grid;grid-template-columns:240px 1fr;gap:1.25rem}
-.prof-card{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.4rem;text-align:center}
-.prof-av{width:76px;height:76px;border-radius:50%;background:var(--rose-light);color:var(--rose);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:500;margin:0 auto .9rem}
+.profile-layout{display:grid;grid-template-columns:255px 1fr;gap:1.25rem}
+.prof-card{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.4rem;text-align:center;margin-bottom:1rem}
+.prof-av{width:86px;height:86px;border-radius:50%;background:var(--rose-light);color:var(--rose);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:500;margin:0 auto .75rem;overflow:hidden}
+.prof-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .prof-name{font-size:17px;font-weight:500;margin-bottom:3px}
 .prof-sub{font-size:12.5px;color:var(--warm-gray);margin-bottom:.9rem}
 .type-toggle{display:flex;background:var(--cream);border-radius:9px;padding:3px;margin-bottom:.7rem}
@@ -18,25 +19,34 @@
 .skills-wrap{display:flex;flex-wrap:wrap;gap:5px;text-align:left}
 .skill-pill{background:var(--rose-light);color:var(--rose);font-size:11.5px;padding:3px 11px;border-radius:40px}
 .p-section{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.25rem;margin-bottom:.875rem}
-.p-sec-title{font-size:14.5px;font-weight:500;margin-bottom:.9rem}
+.p-sec-title{font-size:14.5px;font-weight:500;margin-bottom:.9rem;display:flex;justify-content:space-between;align-items:center}
 .form-label{font-size:12.5px;font-weight:500;color:var(--warm-gray);display:block;margin-bottom:5px}
 .form-input{width:100%;padding:10px 14px;border:.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:13.5px;background:var(--cream);outline:none;transition:border-color .15s;color:var(--dark)}
 .form-input:focus{border-color:var(--rose);background:#fff}
 .form-row{margin-bottom:1rem}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.cert-item{display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;border-bottom:.5px solid var(--border)}
+.cert-item:last-child{border-bottom:none}
+.cert-info{display:flex;align-items:center;gap:10px}
+.cert-icon{width:36px;height:36px;background:var(--gold-light);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.cert-title-text{font-size:13.5px;font-weight:500}
+.cert-meta{font-size:12px;color:var(--warm-gray)}
+.cert-add-form{background:var(--cream);border-radius:12px;padding:1rem;margin-top:1rem;display:none}
+.cert-add-form.open{display:block}
 .apps-item{display:flex;justify-content:space-between;align-items:center;padding:.7rem 0;border-bottom:.5px solid var(--border)}
 .apps-item:last-child{border-bottom:none}
-.status-pill{font-size:11px;font-weight:500;padding:3px 10px;border-radius:40px}
+.status-pill{font-size:11px;font-weight:500;padding:3px 10px;border-radius:40px;white-space:nowrap}
 .s-pending{background:var(--gold-light);color:var(--gold)}
 .s-viewed{background:#EFF6FF;color:#1D6FA5}
 .s-accepted{background:var(--sage-light);color:var(--sage)}
 .s-rejected{background:#FEF2F2;color:#DC2626}
-
+.ai-score-bar{height:4px;border-radius:4px;background:var(--border);margin-top:4px;overflow:hidden}
+.ai-score-fill{height:100%;border-radius:4px;transition:width .6s}
+.ai-badge{display:inline-flex;align-items:center;gap:4px;background:var(--sage-light);color:var(--sage);font-size:11px;font-weight:600;padding:2px 8px;border-radius:40px}
 @media(max-width:768px){
   .page-wrap{padding:1rem 1rem 5rem}
   .profile-layout{grid-template-columns:1fr}
   .form-grid{grid-template-columns:1fr}
-  .prof-card{margin-bottom:1rem}
 }
 </style>
 {% endblock %}
@@ -48,42 +58,99 @@
     <p>Управляйте вашей информацией и видимостью</p>
   </div>
 
-  <form method="POST" action="{{ url_for('update_profile') }}">
-    <div class="profile-layout">
-
-      <!-- Левая колонка — аватар и скиллы -->
-      <div>
-        <div class="prof-card">
-          <div class="prof-av">{{ (current_user.full_name or current_user.username)[0].upper() }}</div>
-          <div class="prof-name">{{ current_user.full_name or current_user.username }}</div>
-          <div class="prof-sub">{{ current_user.profession or 'Укажите профессию' }}{% if current_user.city %} · {{ current_user.city }}{% endif %}</div>
-
-          <div class="type-toggle">
-            <button type="button" class="type-btn {% if current_user.profile_type != 'anon' %}active{% endif %}"
-              onclick="setProfType('open',this)">Открытый</button>
-            <button type="button" class="type-btn {% if current_user.profile_type == 'anon' %}active{% endif %}"
-              onclick="setProfType('anon',this)">Анонимный</button>
-          </div>
-          <input type="hidden" name="profile_type" id="profileTypeInput" value="{{ current_user.profile_type }}"/>
-          <div id="profDesc" style="font-size:11.5px;color:var(--warm-gray);margin-bottom:1rem">
-            {% if current_user.profile_type == 'anon' %}Имя и фото скрыты от работодателей{% else %}Ваше имя и фото видны работодателям{% endif %}
-          </div>
-
-          {% if current_user.get_skills() %}
-          <div class="skills-lbl">Ваши навыки</div>
-          <div class="skills-wrap">
-            {% for skill in current_user.get_skills() %}
-              <span class="skill-pill">{{ skill }}</span>
-            {% endfor %}
-          </div>
+  <div class="profile-layout">
+    <div>
+      <div class="prof-card">
+        <div class="prof-av">
+          {% if current_user.photo %}
+            <img src="{{ url_for('uploaded_file', filename=current_user.photo) }}" alt="фото"/>
+          {% else %}
+            {{ (current_user.full_name or current_user.username)[0].upper() }}
           {% endif %}
         </div>
+        <form method="POST" action="{{ url_for('upload_photo') }}" enctype="multipart/form-data" id="photoForm">
+          <label style="display:block;font-size:11.5px;color:var(--rose);cursor:pointer;margin-bottom:.75rem;font-weight:500" for="photoInput">
+            📷 Изменить фото
+          </label>
+          <input type="file" id="photoInput" name="photo" accept="image/*" style="display:none"
+                 onchange="document.getElementById('photoForm').submit()"/>
+        </form>
+        <div class="prof-name">{{ current_user.full_name or current_user.username }}</div>
+        <div class="prof-sub">{{ current_user.profession or 'Укажите профессию' }}{% if current_user.city %} · {{ current_user.city }}{% endif %}</div>
+        <div class="type-toggle">
+          <button type="button" class="type-btn {% if current_user.profile_type != 'anon' %}active{% endif %}" onclick="setProfType('open',this)">Открытый</button>
+          <button type="button" class="type-btn {% if current_user.profile_type == 'anon' %}active{% endif %}" onclick="setProfType('anon',this)">Анонимный</button>
+        </div>
+        <div id="profDesc" style="font-size:11.5px;color:var(--warm-gray);margin-bottom:1rem">
+          {% if current_user.profile_type == 'anon' %}Имя и фото скрыты от работодателей{% else %}Ваше имя и фото видны работодателям{% endif %}
+        </div>
+        {% set skills = current_user.get_skills() %}
+        {% if skills %}
+        <div class="skills-lbl">Навыки</div>
+        <div class="skills-wrap">{% for s in skills %}<span class="skill-pill">{{ s }}</span>{% endfor %}</div>
+        {% endif %}
       </div>
 
-      <!-- Правая колонка — форма -->
-      <div>
-        <div class="p-section">
-          <div class="p-sec-title">Основная информация</div>
+      <div class="p-section">
+        <div class="p-sec-title">
+          Сертификаты
+          <button type="button" onclick="document.getElementById('certForm').classList.toggle('open')" class="btn btn-ghost" style="font-size:12px;padding:4px 12px">+ Добавить</button>
+        </div>
+        {% for cert in current_user.certificates %}
+        <div class="cert-item">
+          <div class="cert-info">
+            <div class="cert-icon">🎓</div>
+            <div>
+              <div class="cert-title-text">{{ cert.title }}</div>
+              <div class="cert-meta">{{ cert.issuer or '' }}{% if cert.issued_date %} · {{ cert.issued_date }}{% endif %}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            {% if cert.filename %}
+              <a href="{{ url_for('uploaded_file', filename=cert.filename) }}" target="_blank" class="btn btn-ghost" style="font-size:11px;padding:3px 10px">Открыть</a>
+            {% endif %}
+            <form method="POST" action="{{ url_for('delete_certificate', cert_id=cert.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-ghost" style="font-size:11px;padding:3px 10px;color:#dc2626;border-color:#dc2626" onclick="return confirm('Удалить?')">✕</button>
+            </form>
+          </div>
+        </div>
+        {% else %}
+        <div style="font-size:13px;color:var(--warm-gray);padding:.5rem 0">Сертификатов пока нет</div>
+        {% endfor %}
+        <div class="cert-add-form" id="certForm">
+          <form method="POST" action="{{ url_for('add_certificate') }}" enctype="multipart/form-data">
+            <div class="form-row">
+              <label class="form-label">Название *</label>
+              <input class="form-input" type="text" name="cert_title" required placeholder="Google UX Design"/>
+            </div>
+            <div class="form-grid">
+              <div class="form-row">
+                <label class="form-label">Организация</label>
+                <input class="form-input" type="text" name="cert_issuer" placeholder="Google, Coursera..."/>
+              </div>
+              <div class="form-row">
+                <label class="form-label">Дата</label>
+                <input class="form-input" type="text" name="cert_date" placeholder="2024"/>
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Файл (PDF или фото)</label>
+              <input class="form-input" type="file" name="cert_file" accept=".pdf,.png,.jpg,.jpeg" style="padding:6px"/>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-rose" type="submit" style="padding:8px 20px">Сохранить</button>
+              <button type="button" onclick="document.getElementById('certForm').classList.remove('open')" class="btn btn-ghost">Отмена</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="p-section">
+        <div class="p-sec-title">Основная информация</div>
+        <form method="POST" action="{{ url_for('update_profile') }}">
+          <input type="hidden" name="profile_type" id="profileTypeInput" value="{{ current_user.profile_type }}"/>
           <div class="form-grid">
             <div class="form-row">
               <label class="form-label">Полное имя</label>
@@ -95,7 +162,7 @@
             </div>
           </div>
           <div class="form-row">
-            <label class="form-label">Профессия / должность</label>
+            <label class="form-label">Профессия</label>
             <input class="form-input" type="text" name="profession" value="{{ current_user.profession or '' }}" placeholder="UX Designer"/>
           </div>
           <div class="form-row">
@@ -104,42 +171,44 @@
           </div>
           <div class="form-row">
             <label class="form-label">Навыки (через запятую)</label>
-            <input class="form-input" type="text" name="skills"
-              value="{{ current_user.get_skills() | join(', ') }}"
-              placeholder="Figma, UX Research, Python..."/>
+            <input class="form-input" type="text" name="skills" value="{{ current_user.get_skills() | join(', ') }}" placeholder="Figma, UX Research, Python..."/>
           </div>
           <button class="btn btn-rose" type="submit" style="padding:10px 28px">Сохранить</button>
-        </div>
-
-        <!-- Мои отклики -->
-        <div class="p-section">
-          <div class="p-sec-title">Мои отклики ({{ current_user.applications | length }})</div>
-          {% if current_user.applications %}
-            {% for app in current_user.applications %}
-            <div class="apps-item">
-              <div>
-                <div style="font-size:13.5px;font-weight:500">{{ app.job.title }}</div>
-                <div style="font-size:12px;color:var(--warm-gray)">{{ app.job.company.name }} · {{ app.created_at.strftime('%d.%m.%Y') }}</div>
-              </div>
-              <span class="status-pill s-{{ app.status }}">
-                {% if app.status == 'pending' %}На рассмотрении
-                {% elif app.status == 'viewed' %}Просмотрено
-                {% elif app.status == 'accepted' %}Принято
-                {% else %}Отклонено{% endif %}
-              </span>
-            </div>
-            {% endfor %}
-          {% else %}
-            <div style="color:var(--warm-gray);font-size:13px;padding:.5rem 0">
-              Вы ещё не откликались на вакансии.<br>
-              <a href="{{ url_for('jobs') }}" style="color:var(--rose);font-weight:500">Смотреть вакансии →</a>
-            </div>
-          {% endif %}
-        </div>
+        </form>
       </div>
 
+      <div class="p-section">
+        <div class="p-sec-title">
+          🤖 AI-подбор вакансий
+          <button class="btn btn-sage" onclick="runAiMatch()" id="aiBtn" style="font-size:12px;padding:5px 14px">Найти подходящие</button>
+        </div>
+        <div id="aiLoading" style="display:none;font-size:13px;color:var(--warm-gray);padding:.5rem 0">Анализируем ваш профиль...</div>
+        <div id="aiList"></div>
+      </div>
+
+      <div class="p-section">
+        <div class="p-sec-title">Мои отклики ({{ current_user.applications | length }})</div>
+        {% if current_user.applications %}
+          {% for app in current_user.applications %}
+          <div class="apps-item">
+            <div>
+              <div style="font-size:13.5px;font-weight:500">{{ app.job.title }}</div>
+              <div style="font-size:12px;color:var(--warm-gray)">{{ app.job.company.name }} · {{ app.created_at.strftime('%d.%m.%Y') }}</div>
+            </div>
+            <span class="status-pill s-{{ app.status }}">
+              {% if app.status == 'pending' %}На рассмотрении{% elif app.status == 'viewed' %}Просмотрено{% elif app.status == 'accepted' %}Принято{% else %}Отклонено{% endif %}
+            </span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="color:var(--warm-gray);font-size:13px;padding:.5rem 0">
+            Вы ещё не откликались на вакансии.
+            <a href="{{ url_for('jobs') }}" style="color:var(--rose);font-weight:500">Смотреть вакансии →</a>
+          </div>
+        {% endif %}
+      </div>
     </div>
-  </form>
+  </div>
 </div>
 
 <script>
@@ -149,6 +218,42 @@ function setProfType(type, btn) {
   document.getElementById('profileTypeInput').value = type;
   document.getElementById('profDesc').textContent =
     type === 'anon' ? 'Имя и фото скрыты от работодателей' : 'Ваше имя и фото видны работодателям';
+}
+
+async function runAiMatch() {
+  const btn = document.getElementById('aiBtn');
+  const loading = document.getElementById('aiLoading');
+  const list = document.getElementById('aiList');
+  btn.disabled = true;
+  btn.textContent = '...';
+  loading.style.display = 'block';
+  list.innerHTML = '';
+  try {
+    const resp = await fetch('/api/ai_match');
+    const results = await resp.json();
+    loading.style.display = 'none';
+    if (!results.length) {
+      list.innerHTML = '<div style="font-size:13px;color:var(--warm-gray)">Заполните навыки для рекомендаций</div>';
+      return;
+    }
+    list.innerHTML = results.slice(0,6).map(r => {
+      const color = r.score >= 75 ? 'var(--sage)' : r.score >= 50 ? 'var(--gold)' : 'var(--rose)';
+      return `<a href="/jobs/${r.job_id}" style="display:block;text-decoration:none;color:inherit;padding:.7rem 0;border-bottom:.5px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13.5px;font-weight:500">Вакансия #${r.job_id}</span>
+          <span class="ai-badge">${r.score}% совпадение</span>
+        </div>
+        ${r.reason ? '<div style="font-size:12px;color:var(--warm-gray);margin-bottom:4px">'+r.reason+'</div>' : ''}
+        <div class="ai-score-bar"><div class="ai-score-fill" style="width:${r.score}%;background:${color}"></div></div>
+      </a>`;
+    }).join('');
+  } catch(e) {
+    loading.style.display = 'none';
+    list.innerHTML = '<div style="font-size:13px;color:#dc2626">Ошибка. Попробуйте позже.</div>';
+  } finally {
+    btn.textContent = 'Обновить';
+    btn.disabled = false;
+  }
 }
 </script>
 {% endblock %}
