@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Istiqlol{% endblock %}
+{% block extra_styles %}
+<style>
+.hero{max-width:920px;margin:0 auto;padding:5rem 2rem 2.5rem;text-align:center}
+.hero-badge{display:inline-block;background:var(--rose-light);color:var(--rose);font-size:12px;font-weight:500;padding:5px 16px;border-radius:40px;margin-bottom:1.5rem;letter-spacing:.4px}
+.hero h1{font-family:'DM Serif Display',serif;font-size:54px;line-height:1.13;margin-bottom:1.4rem}
+.hero h1 em{color:var(--rose);font-style:italic}
+.hero>p{font-size:17px;color:var(--warm-gray);line-height:1.75;max-width:560px;margin:0 auto 2.5rem;font-weight:300}
+.role-cards{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:660px;margin:0 auto}
+.role-card{background:#fff;border:.5px solid var(--border);border-radius:20px;padding:2rem 1.5rem 1.75rem;cursor:pointer;transition:.25s;text-align:left;position:relative;overflow:hidden;display:block}
+.role-card:hover{transform:translateY(-5px);box-shadow:0 14px 36px rgba(232,133,106,.13)}
+.role-card.seeker:hover{border-color:var(--rose)}
+.role-card.employer:hover{border-color:var(--sage)}
+.role-icon{width:50px;height:50px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:1rem}
+.role-card.seeker .role-icon{background:var(--rose-light)}
+.role-card.employer .role-icon{background:var(--sage-light)}
+.role-card h3{font-size:17px;font-weight:500;margin-bottom:5px}
+.role-card p{font-size:13px;color:var(--warm-gray);line-height:1.5}
+.role-arrow{position:absolute;right:1.5rem;bottom:1.5rem;font-size:18px}
+.role-card.seeker .role-arrow{color:var(--rose)}
+.role-card.employer .role-arrow{color:var(--sage)}
+.stats-strip{display:flex;justify-content:center;gap:4rem;padding:2.5rem 2rem;border-top:.5px solid var(--border);max-width:920px;margin:2.5rem auto 0}
+.stat-num{font-family:'DM Serif Display',serif;font-size:34px;color:var(--dark)}
+.stat-label{font-size:13px;color:var(--warm-gray);margin-top:3px}
+
+/* Feature section */
+.features{max-width:920px;margin:0 auto;padding:3rem 2rem}
+.features-title{font-family:'DM Serif Display',serif;font-size:36px;text-align:center;margin-bottom:2.5rem}
+.features-title em{color:var(--rose);font-style:italic}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.feat-card{background:#fff;border:.5px solid var(--border);border-radius:18px;padding:1.75rem}
+.feat-icon{font-size:28px;margin-bottom:1rem}
+.feat-card h4{font-size:16px;font-weight:500;margin-bottom:7px}
+.feat-card p{font-size:13px;color:var(--warm-gray);line-height:1.6}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="background:var(--cream)">
+  <div class="hero">
+    <div class="hero-badge">✦ Платформа только для женщин Узбекистана</div>
+    <h1>Карьера, которую<br>заслуживаете <em>вы</em></h1>
+    <p>Умные рекомендации, государственная верификация и сообщество поддержки для каждой женщины</p>
+    <div class="role-cards">
+      <a class="role-card seeker" href="{{ url_for('register') }}?role=seeker">
+        <div class="role-icon">👩</div>
+        <h3>Я ищу работу</h3>
+        <p>Платформа подберёт вакансии по вашим навыкам и опыту</p>
+        <span class="role-arrow">→</span>
+      </a>
+      <a class="role-card employer" href="{{ url_for('register') }}?role=employer">
+        <div class="role-icon">🏢</div>
+        <h3>Я работодатель</h3>
+        <p>Разместите вакансию и найдите квалифицированных сотрудников</p>
+        <span class="role-arrow">→</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="stats-strip">
+    <div class="stat"><div class="stat-num">{{ jobs_count }}+</div><div class="stat-label">активных вакансий</div></div>
+    <div class="stat"><div class="stat-num">{{ seekers_count }}</div><div class="stat-label">соискателей</div></div>
+    <div class="stat"><div class="stat-num">{{ companies_count }}</div><div class="stat-label">верифицированных компаний</div></div>
+    <div class="stat"><div class="stat-num">{{ courses_count }}+</div><div class="stat-label">курсов с сертификатами</div></div>
+  </div>
+
+  <div class="features">
+    <div class="features-title">Почему выбирают <em>Istiqlol</em></div>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon">🤖</div>
+        <h4>Умные рекомендации</h4>
+        <p>Платформа анализирует ваши навыки и предлагает подходящие вакансии и курсы</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">✓</div>
+        <h4>Верифицированные компании</h4>
+        <p>Все работодатели проходят проверку, вы защищены от мошенников</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🎓</div>
+        <h4>Курсы с сертификатами</h4>
+        <p>Повышайте квалификацию и получайте признанные сертификаты онлайн</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔒</div>
+        <h4>Анонимный профиль</h4>
+        <p>Выбирайте: показывать ли имя работодателям или оставаться анонимной</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🌍</div>
+        <h4>Все города Узбекистана</h4>
+        <p>Вакансии и курсы доступны для женщин в любом городе страны</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💬</div>
+        <h4>Сообщество поддержки</h4>
+        <p>Истории успеха, менторство и прямой чат с работодателями</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

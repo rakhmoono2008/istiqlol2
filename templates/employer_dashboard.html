@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block title %}Работодатель{% endblock %}
+{% block extra_styles %}
+<style>
+.emp-header{background:#fff;border-bottom:.5px solid var(--border);padding:1.25rem 2rem;display:flex;justify-content:space-between;align-items:center}
+.verified-badge{display:inline-flex;align-items:center;gap:4px;background:#eff6ff;color:#1d6fa5;font-size:11.5px;font-weight:500;padding:3px 10px;border-radius:40px}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--sage-light);color:var(--sage);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:14px;flex-shrink:0}
+.emp-content{padding:2rem;background:var(--cream);min-height:calc(100vh - 130px)}
+.emp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+.emp-stat{background:#fff;border:.5px solid var(--border);border-radius:13px;padding:1.2rem}
+.emp-stat-n{font-family:'DM Serif Display',serif;font-size:27px;margin-bottom:3px}
+.emp-stat-l{font-size:11.5px;color:var(--warm-gray)}
+.emp-section{background:#fff;border:.5px solid var(--border);border-radius:15px;overflow:hidden;margin-bottom:1.5rem}
+.emp-sec-head{padding:1rem 1.4rem;border-bottom:.5px solid var(--border);font-size:14.5px;font-weight:500;display:flex;justify-content:space-between;align-items:center}
+.job-row{padding:1rem 1.4rem;display:flex;justify-content:space-between;align-items:center;border-bottom:.5px solid #f5f3f0}
+.job-row:last-child{border-bottom:none}
+.active-badge{background:var(--sage-light);color:var(--sage);font-size:11.5px;font-weight:500;padding:3px 11px;border-radius:40px}
+.inactive-badge{background:#f5f3f0;color:var(--warm-gray);font-size:11.5px;font-weight:500;padding:3px 11px;border-radius:40px}
+.post-form{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.5rem;max-width:700px;display:none}
+.post-form.visible{display:block}
+.form-label{font-size:12.5px;font-weight:500;color:var(--warm-gray);display:block;margin-bottom:5px}
+.form-input{width:100%;padding:9px 13px;border:.5px solid var(--border);border-radius:9px;font-family:'Outfit',sans-serif;font-size:13.5px;background:var(--cream);outline:none;transition:border-color .15s;color:var(--dark)}
+.form-input:focus{border-color:var(--sage);background:#fff}
+.form-row{margin-bottom:1.1rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.1rem}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="emp-header">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="avatar">{{ company.name[0].upper() }}</div>
+    <div>
+      <div style="font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px">
+        {{ company.name }}
+        {% if company.verified %}<span class="verified-badge">✓ Верифицировано</span>{% endif %}
+      </div>
+      <div style="font-size:12.5px;color:var(--warm-gray)">Работодатель · {{ company.city or 'Ташкент' }}</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px">
+    <button class="btn btn-ghost" onclick="showView('list')">Мои вакансии</button>
+    <button class="btn btn-sage" onclick="showView('post')">+ Разместить вакансию</button>
+  </div>
+</div>
+
+<div class="emp-content">
+  <div class="emp-stats">
+    <div class="emp-stat">
+      <div class="emp-stat-n" style="color:var(--rose)">{{ active_jobs }}</div>
+      <div class="emp-stat-l">Активных вакансий</div>
+    </div>
+    <div class="emp-stat">
+      <div class="emp-stat-n" style="color:var(--sage)">{{ total_apps }}</div>
+      <div class="emp-stat-l">Всего откликов</div>
+    </div>
+    <div class="emp-stat">
+      <div class="emp-stat-n">{{ jobs|length }}</div>
+      <div class="emp-stat-l">Всего вакансий</div>
+    </div>
+    <div class="emp-stat">
+      <div class="emp-stat-n" style="color:var(--gold)">{{ jobs|sum(attribute='applications')|list|length }}</div>
+      <div class="emp-stat-l">На рассмотрении</div>
+    </div>
+  </div>
+
+  <!-- СПИСОК ВАКАНСИЙ -->
+  <div id="view-list">
+    <div class="emp-section">
+      <div class="emp-sec-head">Ваши вакансии</div>
+      {% for job in jobs %}
+      <div class="job-row">
+        <div>
+          <div style="font-size:14.5px;font-weight:500;margin-bottom:3px">{{ job.title }}</div>
+          <div style="font-size:12px;color:var(--warm-gray)">
+            Опубликовано {{ job.created_at.strftime('%d.%m.%Y') }} · {{ job.applications|length }} откликов
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <a href="{{ url_for('job_applications', job_id=job.id) }}" class="btn btn-ghost" style="font-size:12px;padding:5px 12px">Отклики</a>
+          <form method="POST" action="{{ url_for('toggle_job', job_id=job.id) }}" style="display:inline">
+            <button class="btn btn-ghost" type="submit" style="font-size:12px;padding:5px 12px">
+              {% if job.is_active %}Деактивировать{% else %}Активировать{% endif %}
+            </button>
+          </form>
+          {% if job.is_active %}
+            <span class="active-badge">Активна</span>
+          {% else %}
+            <span class="inactive-badge">Неактивна</span>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div style="padding:2rem;text-align:center;color:var(--warm-gray);font-size:13px">
+        Вы ещё не разместили ни одной вакансии
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ФОРМА ПУБЛИКАЦИИ -->
+  <div id="view-post" class="post-form">
+    <div style="font-size:17px;font-weight:500;margin-bottom:1.4rem">Новая вакансия</div>
+    <form method="POST" action="{{ url_for('post_job') }}">
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Название должности *</label>
+          <input class="form-input" type="text" name="title" required placeholder="UX/UI Дизайнер"/>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Категория</label>
+          <select class="form-input" name="category">
+            <option>IT / Дизайн</option>
+            <option>Маркетинг</option>
+            <option>Финансы</option>
+            <option>HR</option>
+            <option>Образование</option>
+            <option>Медицина</option>
+            <option>Юриспруденция</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Зарплата (от)</label>
+          <input class="form-input" type="text" name="salary_from" placeholder="5 000 000 сум"/>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Формат работы</label>
+          <select class="form-input" name="format">
+            <option>Офис</option>
+            <option>Удалённо</option>
+            <option>Гибрид</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Описание вакансии</label>
+        <textarea class="form-input" name="description" rows="4" placeholder="Опишите обязанности, требования и условия работы..."></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Ключевые навыки (через запятую)</label>
+        <input class="form-input" type="text" name="skills" placeholder="Figma, Prototyping, User Research"/>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:.5rem">
+        <button class="btn btn-sage" type="submit">Опубликовать вакансию</button>
+        <button type="button" class="btn btn-ghost" onclick="showView('list')">Отмена</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function showView(view) {
+  document.getElementById('view-list').style.display = view === 'list' ? 'block' : 'none';
+  const post = document.getElementById('view-post');
+  post.classList.toggle('visible', view === 'post');
+}
+</script>
+{% endblock %}

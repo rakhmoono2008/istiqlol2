@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Регистрация{% endblock %}
+{% block extra_styles %}
+<style>
+.auth-wrap{min-height:calc(100vh - 130px);display:flex;align-items:center;justify-content:center;padding:2rem}
+.auth-card{background:#fff;border:.5px solid var(--border);border-radius:20px;padding:2.5rem;width:100%;max-width:480px}
+.auth-title{font-family:'DM Serif Display',serif;font-size:28px;margin-bottom:5px}
+.auth-sub{font-size:13px;color:var(--warm-gray);margin-bottom:2rem}
+.form-label{font-size:12.5px;font-weight:500;color:var(--warm-gray);display:block;margin-bottom:5px}
+.form-input{width:100%;padding:10px 14px;border:.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;background:var(--cream);outline:none;transition:border-color .15s;color:var(--dark)}
+.form-input:focus{border-color:var(--rose);background:#fff}
+.form-row{margin-bottom:1.1rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.role-picker{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem}
+.role-opt{border:.5px solid var(--border);border-radius:12px;padding:.9rem;cursor:pointer;transition:.15s;text-align:center}
+.role-opt:has(input:checked){border-color:var(--rose);background:var(--rose-light)}
+.role-opt input{display:none}
+.role-opt-icon{font-size:22px;margin-bottom:5px}
+.role-opt-label{font-size:13px;font-weight:500}
+.role-opt-sub{font-size:11.5px;color:var(--warm-gray);margin-top:2px}
+.auth-link{font-size:13px;color:var(--warm-gray);text-align:center;margin-top:1.25rem}
+.auth-link a{color:var(--rose);font-weight:500}
+#employer-fields{display:none}
+</style>
+{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-title">Создать аккаунт</div>
+    <div class="auth-sub">Присоединяйтесь к платформе Istiqlol</div>
+
+    <form method="POST" id="regForm">
+      <!-- Роль -->
+      <div style="font-size:12.5px;font-weight:500;color:var(--warm-gray);margin-bottom:.6rem">Я хочу:</div>
+      <div class="role-picker">
+        <label class="role-opt">
+          <input type="radio" name="role" value="seeker" checked onchange="toggleRole('seeker')"/>
+          <div class="role-opt-icon">👩</div>
+          <div class="role-opt-label">Найти работу</div>
+          <div class="role-opt-sub">Соискатель</div>
+        </label>
+        <label class="role-opt">
+          <input type="radio" name="role" value="employer" onchange="toggleRole('employer')"/>
+          <div class="role-opt-icon">🏢</div>
+          <div class="role-opt-label">Нанять сотрудника</div>
+          <div class="role-opt-sub">Работодатель</div>
+        </label>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Имя пользователя *</label>
+          <input class="form-input" type="text" name="username" required/>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Полное имя</label>
+          <input class="form-input" type="text" name="full_name"/>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" name="email"/>
+      </div>
+
+      <div id="employer-fields">
+        <div class="form-grid">
+          <div class="form-row">
+            <label class="form-label">Название компании</label>
+            <input class="form-input" type="text" name="company_name" placeholder="ООО «Ваша компания»"/>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Город</label>
+            <input class="form-input" type="text" name="city" placeholder="Ташкент"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Пароль *</label>
+          <input class="form-input" type="password" name="password" required/>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Повторите пароль *</label>
+          <input class="form-input" type="password" name="confirm_password" required/>
+        </div>
+      </div>
+
+      <button class="btn btn-rose" type="submit" style="width:100%;padding:11px">Создать аккаунт</button>
+    </form>
+    <div class="auth-link">Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a></div>
+  </div>
+</div>
+<script>
+function toggleRole(role) {
+  document.getElementById('employer-fields').style.display = role === 'employer' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

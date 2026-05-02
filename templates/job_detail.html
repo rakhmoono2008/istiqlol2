@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}{{ job.title }}{% endblock %}
+{% block extra_styles %}
+<style>
+.page-wrap{max-width:900px;margin:0 auto;padding:2rem}
+.breadcrumb{font-size:12.5px;color:var(--warm-gray);margin-bottom:1.5rem}
+.breadcrumb a{color:var(--rose)}
+.job-detail-card{background:#fff;border:.5px solid var(--border);border-radius:20px;padding:2rem;margin-bottom:1.5rem}
+.jd-header{display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.5rem}
+.co-logo-lg{width:60px;height:60px;border-radius:14px;background:var(--sage-light);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.jd-title{font-family:'DM Serif Display',serif;font-size:28px;margin-bottom:5px}
+.jd-co{font-size:14px;color:var(--warm-gray);margin-bottom:.75rem}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{font-size:12px;font-weight:500;padding:4px 12px;border-radius:40px}
+.badge-format{background:var(--cream);color:var(--warm-gray);border:.5px solid var(--border)}
+.badge-cat{background:var(--rose-light);color:var(--rose)}
+.badge-sal{background:var(--gold-light);color:var(--gold)}
+.jd-divider{border:none;border-top:.5px solid var(--border);margin:1.5rem 0}
+.jd-section{margin-bottom:1.25rem}
+.jd-section h3{font-size:15px;font-weight:500;margin-bottom:.65rem}
+.jd-section p{font-size:14px;color:var(--warm-gray);line-height:1.75}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{background:var(--cream);border:.5px solid var(--border);border-radius:6px;padding:4px 12px;font-size:12.5px;color:var(--warm-gray)}
+.apply-card{background:#fff;border:.5px solid var(--border);border-radius:20px;padding:1.75rem}
+.apply-card h3{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:.75rem}
+.form-label{font-size:12.5px;font-weight:500;color:var(--warm-gray);display:block;margin-bottom:5px}
+.form-input{width:100%;padding:9px 13px;border:.5px solid var(--border);border-radius:9px;font-family:'Outfit',sans-serif;font-size:13.5px;background:var(--cream);outline:none;transition:border-color .15s;color:var(--dark)}
+.form-input:focus{border-color:var(--rose);background:#fff}
+.applied-notice{background:var(--sage-light);color:var(--sage);border-radius:12px;padding:1rem 1.25rem;font-size:14px;font-weight:500;text-align:center}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <div class="breadcrumb">
+    <a href="{{ url_for('jobs') }}">← Вакансии</a> / {{ job.title }}
+  </div>
+
+  <div class="job-detail-card">
+    <div class="jd-header">
+      <div class="co-logo-lg">🏢</div>
+      <div>
+        <div class="jd-title">{{ job.title }}</div>
+        <div class="jd-co">{{ job.company.name }} · {{ job.city or 'Ташкент' }}</div>
+        <div class="badges">
+          <span class="badge badge-format">{{ job.format or 'Офис' }}</span>
+          {% if job.category %}<span class="badge badge-cat">{{ job.category }}</span>{% endif %}
+          {% if job.salary_from %}<span class="badge badge-sal">от {{ job.salary_from }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    <hr class="jd-divider"/>
+    {% if job.description %}
+    <div class="jd-section">
+      <h3>Описание вакансии</h3>
+      <p>{{ job.description }}</p>
+    </div>
+    {% endif %}
+    {% if job.get_skills() %}
+    <div class="jd-section">
+      <h3>Требуемые навыки</h3>
+      <div class="tags">
+        {% for skill in job.get_skills() %}<span class="tag">{{ skill }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    <hr class="jd-divider"/>
+    <div style="font-size:12.5px;color:var(--warm-gray)">
+      Опубликовано {{ job.created_at.strftime('%d.%m.%Y') }} · {{ job.applications|length }} откликов
+    </div>
+  </div>
+
+  <div class="apply-card">
+    {% if applied %}
+      <div class="applied-notice">✓ Вы уже откликнулись на эту вакансию</div>
+    {% elif current_user.is_authenticated and current_user.role == 'seeker' %}
+      <h3>Откликнуться на вакансию</h3>
+      <form method="POST" action="{{ url_for('apply_job', job_id=job.id) }}">
+        <div style="margin-bottom:1rem">
+          <label class="form-label">Сопроводительное письмо (необязательно)</label>
+          <textarea class="form-input" name="cover_letter" rows="4" placeholder="Расскажите, почему вы подходите на эту должность..."></textarea>
+        </div>
+        <button class="btn btn-rose" type="submit">Отправить отклик</button>
+      </form>
+    {% elif current_user.is_authenticated %}
+      <div class="applied-notice" style="background:var(--cream);color:var(--warm-gray)">
+        Только соискатели могут откликаться на вакансии
+      </div>
+    {% else %}
+      <h3>Откликнуться на вакансию</h3>
+      <p style="color:var(--warm-gray);font-size:13.5px;margin-bottom:1rem">Войдите или зарегистрируйтесь, чтобы откликнуться</p>
+      <div style="display:flex;gap:10px">
+        <a class="btn btn-rose" href="{{ url_for('login') }}">Войти</a>
+        <a class="btn btn-outline" href="{{ url_for('register') }}">Регистрация</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
