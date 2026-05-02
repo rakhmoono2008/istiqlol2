@@ -191,13 +191,195 @@ def admin_required(f):
 
 def backup_to_json():
     try:
+        bf = app.config['BACKUP_FOLDER']
+
+        # Пользователи
         users_data = [{'id': u.id, 'username': u.username, 'full_name': u.full_name,
-                       'password_hash': u.password_hash, 'role': u.role}
-                      for u in User.query.all()]
-        with open(os.path.join(app.config['BACKUP_FOLDER'], 'users.json'), 'w', encoding='utf-8') as f:
+                        'email': u.email, 'password_hash': u.password_hash, 'role': u.role,
+                        'city': u.city, 'profession': u.profession, 'profile_type': u.profile_type,
+                        'skills': u.skills, 'bio': u.bio,
+                        'created_at': u.created_at.isoformat() if u.created_at else None}
+                       for u in User.query.all()]
+        with open(os.path.join(bf, 'users.json'), 'w', encoding='utf-8') as f:
             json.dump(users_data, f, ensure_ascii=False, indent=2)
+
+        # Компании
+        companies_data = [{'id': c.id, 'user_id': c.user_id, 'name': c.name,
+                            'description': c.description, 'city': c.city,
+                            'industry': c.industry, 'verified': c.verified,
+                            'created_at': c.created_at.isoformat() if c.created_at else None}
+                           for c in Company.query.all()]
+        with open(os.path.join(bf, 'companies.json'), 'w', encoding='utf-8') as f:
+            json.dump(companies_data, f, ensure_ascii=False, indent=2)
+
+        # Вакансии
+        jobs_data = [{'id': j.id, 'company_id': j.company_id, 'title': j.title,
+                       'category': j.category, 'description': j.description,
+                       'salary_from': j.salary_from, 'format': j.format, 'city': j.city,
+                       'skills_required': j.skills_required, 'is_active': j.is_active,
+                       'created_at': j.created_at.isoformat() if j.created_at else None}
+                      for j in Job.query.all()]
+        with open(os.path.join(bf, 'jobs.json'), 'w', encoding='utf-8') as f:
+            json.dump(jobs_data, f, ensure_ascii=False, indent=2)
+
+        # Отклики
+        apps_data = [{'id': a.id, 'job_id': a.job_id, 'user_id': a.user_id,
+                       'cover_letter': a.cover_letter, 'status': a.status,
+                       'created_at': a.created_at.isoformat() if a.created_at else None}
+                      for a in Application.query.all()]
+        with open(os.path.join(bf, 'applications.json'), 'w', encoding='utf-8') as f:
+            json.dump(apps_data, f, ensure_ascii=False, indent=2)
+
+        # Курсы
+        courses_data = [{'id': c.id, 'title': c.title, 'category': c.category,
+                          'description': c.description, 'hours': c.hours, 'level': c.level,
+                          'has_certificate': c.has_certificate, 'emoji': c.emoji,
+                          'bg_color': c.bg_color}
+                         for c in Course.query.all()]
+        with open(os.path.join(bf, 'courses.json'), 'w', encoding='utf-8') as f:
+            json.dump(courses_data, f, ensure_ascii=False, indent=2)
+
+        # Записи на курсы
+        enrollments_data = [{'id': e.id, 'course_id': e.course_id, 'user_id': e.user_id,
+                               'progress': e.progress,
+                               'enrolled_at': e.enrolled_at.isoformat() if e.enrolled_at else None}
+                              for e in CourseEnrollment.query.all()]
+        with open(os.path.join(bf, 'enrollments.json'), 'w', encoding='utf-8') as f:
+            json.dump(enrollments_data, f, ensure_ascii=False, indent=2)
+
+        # Биографии
+        bios_data = [{'id': b.id, 'name': b.name, 'role': b.role, 'company': b.company,
+                       'quote': b.quote, 'emoji': b.emoji, 'bg_color': b.bg_color}
+                      for b in Biography.query.all()]
+        with open(os.path.join(bf, 'biographies.json'), 'w', encoding='utf-8') as f:
+            json.dump(bios_data, f, ensure_ascii=False, indent=2)
+
+        print("✅ Полный бэкап создан!")
     except Exception as e:
         print(f"❌ Ошибка бэкапа: {e}")
+
+
+def restore_from_json():
+    try:
+        bf = app.config['BACKUP_FOLDER']
+
+        # Пользователи
+        uf = os.path.join(bf, 'users.json')
+        if os.path.exists(uf):
+            with open(uf, 'r', encoding='utf-8') as f:
+                for ud in json.load(f):
+                    if not User.query.filter_by(username=ud['username']).first():
+                        u = User(username=ud['username'], full_name=ud.get('full_name'),
+                                 email=ud.get('email'), password_hash=ud['password_hash'],
+                                 role=ud['role'], city=ud.get('city'),
+                                 profession=ud.get('profession'),
+                                 profile_type=ud.get('profile_type', 'open'),
+                                 skills=ud.get('skills'), bio=ud.get('bio'))
+                        if ud.get('created_at'):
+                            u.created_at = datetime.fromisoformat(ud['created_at'])
+                        db.session.add(u)
+            db.session.commit()
+            print("✅ Пользователи восстановлены")
+
+        # Компании
+        cf = os.path.join(bf, 'companies.json')
+        if os.path.exists(cf):
+            with open(cf, 'r', encoding='utf-8') as f:
+                for cd in json.load(f):
+                    if not Company.query.filter_by(name=cd['name']).first():
+                        user = User.query.filter_by(id=cd['user_id']).first()
+                        if user:
+                            c = Company(user_id=user.id, name=cd['name'],
+                                        description=cd.get('description'),
+                                        city=cd.get('city'), industry=cd.get('industry'),
+                                        verified=cd.get('verified', False))
+                            if cd.get('created_at'):
+                                c.created_at = datetime.fromisoformat(cd['created_at'])
+                            db.session.add(c)
+            db.session.commit()
+            print("✅ Компании восстановлены")
+
+        # Вакансии
+        jf = os.path.join(bf, 'jobs.json')
+        if os.path.exists(jf):
+            with open(jf, 'r', encoding='utf-8') as f:
+                for jd in json.load(f):
+                    company = Company.query.filter_by(id=jd['company_id']).first()
+                    if company and not Job.query.filter_by(title=jd['title'], company_id=company.id).first():
+                        j = Job(company_id=company.id, title=jd['title'],
+                                category=jd.get('category'), description=jd.get('description'),
+                                salary_from=jd.get('salary_from'), format=jd.get('format'),
+                                city=jd.get('city'), skills_required=jd.get('skills_required'),
+                                is_active=jd.get('is_active', True))
+                        if jd.get('created_at'):
+                            j.created_at = datetime.fromisoformat(jd['created_at'])
+                        db.session.add(j)
+            db.session.commit()
+            print("✅ Вакансии восстановлены")
+
+        # Курсы
+        coursesf = os.path.join(bf, 'courses.json')
+        if os.path.exists(coursesf):
+            with open(coursesf, 'r', encoding='utf-8') as f:
+                for cd in json.load(f):
+                    if not Course.query.filter_by(title=cd['title']).first():
+                        c = Course(title=cd['title'], category=cd.get('category'),
+                                   description=cd.get('description'), hours=cd.get('hours'),
+                                   level=cd.get('level'), has_certificate=cd.get('has_certificate', True),
+                                   emoji=cd.get('emoji', '📚'), bg_color=cd.get('bg_color', '#FDF0EC'))
+                        db.session.add(c)
+            db.session.commit()
+            print("✅ Курсы восстановлены")
+
+        # Биографии
+        biof = os.path.join(bf, 'biographies.json')
+        if os.path.exists(biof):
+            with open(biof, 'r', encoding='utf-8') as f:
+                for bd in json.load(f):
+                    if not Biography.query.filter_by(name=bd['name']).first():
+                        b = Biography(name=bd['name'], role=bd.get('role'),
+                                      company=bd.get('company'), quote=bd.get('quote'),
+                                      emoji=bd.get('emoji', '👩‍💼'),
+                                      bg_color=bd.get('bg_color', '#FDF0EC'))
+                        db.session.add(b)
+            db.session.commit()
+            print("✅ Биографии восстановлены")
+
+        # Отклики
+        appf = os.path.join(bf, 'applications.json')
+        if os.path.exists(appf):
+            with open(appf, 'r', encoding='utf-8') as f:
+                for ad in json.load(f):
+                    if not Application.query.filter_by(job_id=ad['job_id'], user_id=ad['user_id']).first():
+                        job = Job.query.filter_by(id=ad['job_id']).first()
+                        user = User.query.filter_by(id=ad['user_id']).first()
+                        if job and user:
+                            a = Application(job_id=job.id, user_id=user.id,
+                                            cover_letter=ad.get('cover_letter'),
+                                            status=ad.get('status', 'pending'))
+                            if ad.get('created_at'):
+                                a.created_at = datetime.fromisoformat(ad['created_at'])
+                            db.session.add(a)
+            db.session.commit()
+            print("✅ Отклики восстановлены")
+
+        # Записи на курсы
+        enrf = os.path.join(bf, 'enrollments.json')
+        if os.path.exists(enrf):
+            with open(enrf, 'r', encoding='utf-8') as f:
+                for ed in json.load(f):
+                    if not CourseEnrollment.query.filter_by(course_id=ed['course_id'], user_id=ed['user_id']).first():
+                        course = Course.query.filter_by(id=ed['course_id']).first()
+                        user = User.query.filter_by(id=ed['user_id']).first()
+                        if course and user:
+                            e = CourseEnrollment(course_id=course.id, user_id=user.id,
+                                                 progress=ed.get('progress', 0))
+                            db.session.add(e)
+            db.session.commit()
+            print("✅ Записи на курсы восстановлены")
+
+    except Exception as e:
+        print(f"❌ Ошибка восстановления: {e}")
 
 # ===== МАРШРУТЫ =====
 
