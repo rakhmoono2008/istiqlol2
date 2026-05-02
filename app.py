@@ -64,6 +64,7 @@ class User(UserMixin, db.Model):
     profile_type = db.Column(db.String(20), default='open')  # open, anon
     skills = db.Column(db.Text)  # JSON list
     bio = db.Column(db.Text)
+    photo = db.Column(db.String(300))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     @property
@@ -160,6 +161,25 @@ class Biography(db.Model):
     bg_color = db.Column(db.String(20), default='#FDF0EC')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+
+class Certificate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(300), nullable=False)
+    issuer = db.Column(db.String(200))
+    filename = db.Column(db.String(300))
+    issued_date = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='certificates')
+
+class VerificationRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    comment = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    company = db.relationship('Company', backref='verification_requests')
+
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -197,7 +217,7 @@ def backup_to_json():
         users_data = [{'id': u.id, 'username': u.username, 'full_name': u.full_name,
                         'email': u.email, 'password_hash': u.password_hash, 'role': u.role,
                         'city': u.city, 'profession': u.profession, 'profile_type': u.profile_type,
-                        'skills': u.skills, 'bio': u.bio,
+                        'skills': u.skills, 'bio': u.bio, 'photo': u.photo,
                         'created_at': u.created_at.isoformat() if u.created_at else None}
                        for u in User.query.all()]
         with open(os.path.join(bf, 'users.json'), 'w', encoding='utf-8') as f:
@@ -726,6 +746,173 @@ def chat_poll(user_id):
 def unread_count():
     count = Message.query.filter_by(receiver_id=current_user.id, is_read=False).count()
     return jsonify({'count': count})
+
+
+# --- Фото профиля ---
+@app.route('/profile/upload_photo', methods=['POST'])
+@login_required
+def upload_photo():
+    if 'photo' not in request.files:
+        flash('Файл не выбран', 'danger')
+        return redirect(url_for('profile'))
+    file = request.files['photo']
+    if file.filename == '':
+        flash('Файл не выбран', 'danger')
+        return redirect(url_for('profile'))
+    ext = file.filename.rsplit('.', 1)[-1].lower()
+    if ext not in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
+        flash('Только изображения (jpg, png, gif)', 'danger')
+        return redirect(url_for('profile'))
+    filename = f"photo_{current_user.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{ext}"
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    if current_user.photo:
+        old_path = os.path.join(app.config['UPLOAD_FOLDER'], current_user.photo)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+    current_user.photo = filename
+    db.session.commit()
+    backup_to_json()
+    flash('✅ Фото профиля обновлено!', 'success')
+    return redirect(url_for('profile'))
+
+# --- Сертификаты ---
+@app.route('/profile/add_certificate', methods=['POST'])
+@login_required
+def add_certificate():
+    title = request.form.get('cert_title', '').strip()
+    issuer = request.form.get('cert_issuer', '').strip()
+    issued_date = request.form.get('cert_date', '').strip()
+    if not title:
+        flash('Укажите название сертификата', 'danger')
+        return redirect(url_for('profile'))
+    filename = None
+    if 'cert_file' in request.files:
+        file = request.files['cert_file']
+        if file and file.filename:
+            ext = file.filename.rsplit('.', 1)[-1].lower()
+            if ext in {'pdf', 'png', 'jpg', 'jpeg'}:
+                filename = f"cert_{current_user.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{ext}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    cert = Certificate(user_id=current_user.id, title=title,
+                       issuer=issuer, filename=filename, issued_date=issued_date)
+    db.session.add(cert)
+    db.session.commit()
+    backup_to_json()
+    flash('✅ Сертификат добавлен!', 'success')
+    return redirect(url_for('profile'))
+
+@app.route('/profile/delete_certificate/<int:cert_id>', methods=['POST'])
+@login_required
+def delete_certificate(cert_id):
+    cert = Certificate.query.get_or_404(cert_id)
+    if cert.user_id != current_user.id:
+        flash('Нет прав', 'danger')
+        return redirect(url_for('profile'))
+    if cert.filename:
+        path = os.path.join(app.config['UPLOAD_FOLDER'], cert.filename)
+        if os.path.exists(path):
+            os.remove(path)
+    db.session.delete(cert)
+    db.session.commit()
+    flash('Сертификат удалён', 'success')
+    return redirect(url_for('profile'))
+
+# --- Верификация работодателя ---
+@app.route('/employer/request_verification', methods=['POST'])
+@login_required
+def request_verification():
+    if current_user.role != 'employer':
+        flash('Только для работодателей', 'danger')
+        return redirect(url_for('index'))
+    company = Company.query.filter_by(user_id=current_user.id).first()
+    if not company:
+        flash('Компания не найдена', 'danger')
+        return redirect(url_for('employer_dashboard'))
+    existing = VerificationRequest.query.filter_by(company_id=company.id, status='pending').first()
+    if existing:
+        flash('Заявка уже отправлена, ожидайте', 'warning')
+        return redirect(url_for('employer_dashboard'))
+    vr = VerificationRequest(company_id=company.id)
+    db.session.add(vr)
+    db.session.commit()
+    flash('✅ Заявка на верификацию отправлена!', 'success')
+    return redirect(url_for('employer_dashboard'))
+
+@app.route('/admin/verify_company/<int:company_id>', methods=['POST'])
+@login_required
+@admin_required
+def verify_company(company_id):
+    company = Company.query.get_or_404(company_id)
+    action = request.form.get('action', 'approve')
+    company.verified = (action == 'approve')
+    vr = VerificationRequest.query.filter_by(company_id=company_id, status='pending').first()
+    if vr:
+        vr.status = 'approved' if action == 'approve' else 'rejected'
+        vr.comment = request.form.get('comment', '')
+    db.session.commit()
+    msg = 'верифицирована' if action == 'approve' else 'отклонена'
+    flash(f'Компания {company.name} {msg}', 'success')
+    return redirect(url_for('admin_panel'))
+
+# --- AI матчинг вакансий ---
+@app.route('/api/ai_match')
+@login_required
+def ai_match():
+    import urllib.request
+    import urllib.error
+    import json as _json
+
+    if current_user.role != 'seeker':
+        return jsonify({'error': 'only for seekers'}), 403
+
+    jobs = Job.query.filter_by(is_active=True).all()
+    user_skills = current_user.get_skills()
+    user_skills_set = set(s.lower() for s in user_skills)
+
+    api_key = os.environ.get('GEMINI_API_KEY', '')
+    if api_key:
+        jobs_text = '\n'.join([
+            f"ID:{j.id}|{j.title}|skills:{','.join(j.get_skills())}|format:{j.format}|cat:{j.category or ''}"
+            for j in jobs[:20]
+        ])
+        prompt = (
+            f"Job matching assistant for women in Uzbekistan.\n"
+            f"Candidate: profession={current_user.profession or ''}, "
+            f"skills={','.join(user_skills)}, bio={current_user.bio or ''}\n"
+            f"Jobs:\n{jobs_text}\n"
+            f"Return ONLY a JSON array sorted by score desc: "
+            f'[{{"job_id": N, "score": 0-100, "reason": "short reason in Russian"}}]\n'
+            f"No explanation, only JSON."
+        )
+        try:
+            url = (
+                'https://generativelanguage.googleapis.com/v1beta/models/'
+                f'gemini-1.5-flash-latest:generateContent?key={api_key}'
+            )
+            body = _json.dumps({'contents': [{'parts': [{'text': prompt}]}]}).encode()
+            req = urllib.request.Request(
+                url, data=body, headers={'Content-Type': 'application/json'})
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                data = _json.loads(resp.read())
+            text = data['candidates'][0]['content']['parts'][0]['text']
+            text = text.strip().lstrip('```json').lstrip('```').rstrip('```').strip()
+            results = _json.loads(text)
+            return jsonify(results)
+        except Exception as e:
+            print(f'Gemini error: {e}')
+
+    # Fallback — keyword matching
+    results = []
+    for job in jobs:
+        job_skills = set(s.lower() for s in job.get_skills())
+        if user_skills_set and job_skills:
+            common = len(user_skills_set & job_skills)
+            score = min(95, int((common / max(len(job_skills), 1)) * 100) + 25)
+        else:
+            score = 40
+        results.append({'job_id': job.id, 'score': score, 'reason': ''})
+    results.sort(key=lambda x: x['score'], reverse=True)
+    return jsonify(results[:10])
 
 # --- Админ-панель ---
 @app.route('/admin')
