@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block title %}Мой профиль{% endblock %}
+{% block extra_styles %}
+<style>
+.page-wrap{max-width:900px;margin:0 auto;padding:2rem}
+.page-header{margin-bottom:1.75rem}
+.page-header h1{font-family:'DM Serif Display',serif;font-size:30px;margin-bottom:3px}
+.page-header p{font-size:13px;color:var(--warm-gray)}
+.profile-layout{display:grid;grid-template-columns:240px 1fr;gap:1.25rem}
+.prof-card{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.4rem;text-align:center}
+.prof-av{width:76px;height:76px;border-radius:50%;background:var(--rose-light);color:var(--rose);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:500;margin:0 auto .9rem}
+.prof-name{font-size:17px;font-weight:500;margin-bottom:3px}
+.prof-sub{font-size:12.5px;color:var(--warm-gray);margin-bottom:.9rem}
+.type-toggle{display:flex;background:var(--cream);border-radius:9px;padding:3px;margin-bottom:.7rem}
+.type-btn{flex:1;padding:5px 7px;border-radius:7px;font-size:12px;cursor:pointer;border:none;background:transparent;color:var(--warm-gray);font-family:'Outfit',sans-serif;transition:.15s}
+.type-btn.active{background:#fff;color:var(--dark);font-weight:500;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.skills-lbl{font-size:12.5px;font-weight:500;text-align:left;margin-bottom:5px;margin-top:.5rem}
+.skills-wrap{display:flex;flex-wrap:wrap;gap:5px;text-align:left}
+.skill-pill{background:var(--rose-light);color:var(--rose);font-size:11.5px;padding:3px 11px;border-radius:40px}
+.p-section{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.25rem;margin-bottom:.875rem}
+.p-sec-title{font-size:14.5px;font-weight:500;margin-bottom:.9rem}
+.form-label{font-size:12.5px;font-weight:500;color:var(--warm-gray);display:block;margin-bottom:5px}
+.form-input{width:100%;padding:10px 14px;border:.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:13.5px;background:var(--cream);outline:none;transition:border-color .15s;color:var(--dark)}
+.form-input:focus{border-color:var(--rose);background:#fff}
+.form-row{margin-bottom:1rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.apps-item{display:flex;justify-content:space-between;align-items:center;padding:.7rem 0;border-bottom:.5px solid var(--border)}
+.apps-item:last-child{border-bottom:none}
+.status-pill{font-size:11px;font-weight:500;padding:3px 10px;border-radius:40px}
+.s-pending{background:var(--gold-light);color:var(--gold)}
+.s-viewed{background:#EFF6FF;color:#1D6FA5}
+.s-accepted{background:var(--sage-light);color:var(--sage)}
+.s-rejected{background:#FEF2F2;color:#DC2626}
+
+@media(max-width:768px){
+  .page-wrap{padding:1rem 1rem 5rem}
+  .profile-layout{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .prof-card{margin-bottom:1rem}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <div class="page-header">
+    <h1>Мой профиль</h1>
+    <p>Управляйте вашей информацией и видимостью</p>
+  </div>
+
+  <form method="POST" action="{{ url_for('update_profile') }}">
+    <div class="profile-layout">
+
+      <!-- Левая колонка — аватар и скиллы -->
+      <div>
+        <div class="prof-card">
+          <div class="prof-av">{{ (current_user.full_name or current_user.username)[0].upper() }}</div>
+          <div class="prof-name">{{ current_user.full_name or current_user.username }}</div>
+          <div class="prof-sub">{{ current_user.profession or 'Укажите профессию' }}{% if current_user.city %} · {{ current_user.city }}{% endif %}</div>
+
+          <div class="type-toggle">
+            <button type="button" class="type-btn {% if current_user.profile_type != 'anon' %}active{% endif %}"
+              onclick="setProfType('open',this)">Открытый</button>
+            <button type="button" class="type-btn {% if current_user.profile_type == 'anon' %}active{% endif %}"
+              onclick="setProfType('anon',this)">Анонимный</button>
+          </div>
+          <input type="hidden" name="profile_type" id="profileTypeInput" value="{{ current_user.profile_type }}"/>
+          <div id="profDesc" style="font-size:11.5px;color:var(--warm-gray);margin-bottom:1rem">
+            {% if current_user.profile_type == 'anon' %}Имя и фото скрыты от работодателей{% else %}Ваше имя и фото видны работодателям{% endif %}
+          </div>
+
+          {% if current_user.get_skills() %}
+          <div class="skills-lbl">Ваши навыки</div>
+          <div class="skills-wrap">
+            {% for skill in current_user.get_skills() %}
+              <span class="skill-pill">{{ skill }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Правая колонка — форма -->
+      <div>
+        <div class="p-section">
+          <div class="p-sec-title">Основная информация</div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">Полное имя</label>
+              <input class="form-input" type="text" name="full_name" value="{{ current_user.full_name or '' }}"/>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Город</label>
+              <input class="form-input" type="text" name="city" value="{{ current_user.city or '' }}" placeholder="Ташкент"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Профессия / должность</label>
+            <input class="form-input" type="text" name="profession" value="{{ current_user.profession or '' }}" placeholder="UX Designer"/>
+          </div>
+          <div class="form-row">
+            <label class="form-label">О себе</label>
+            <textarea class="form-input" name="bio" rows="3" placeholder="Расскажите о себе...">{{ current_user.bio or '' }}</textarea>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Навыки (через запятую)</label>
+            <input class="form-input" type="text" name="skills"
+              value="{{ current_user.get_skills() | join(', ') }}"
+              placeholder="Figma, UX Research, Python..."/>
+          </div>
+          <button class="btn btn-rose" type="submit" style="padding:10px 28px">Сохранить</button>
+        </div>
+
+        <!-- Мои отклики -->
+        <div class="p-section">
+          <div class="p-sec-title">Мои отклики ({{ current_user.applications | length }})</div>
+          {% if current_user.applications %}
+            {% for app in current_user.applications %}
+            <div class="apps-item">
+              <div>
+                <div style="font-size:13.5px;font-weight:500">{{ app.job.title }}</div>
+                <div style="font-size:12px;color:var(--warm-gray)">{{ app.job.company.name }} · {{ app.created_at.strftime('%d.%m.%Y') }}</div>
+              </div>
+              <span class="status-pill s-{{ app.status }}">
+                {% if app.status == 'pending' %}На рассмотрении
+                {% elif app.status == 'viewed' %}Просмотрено
+                {% elif app.status == 'accepted' %}Принято
+                {% else %}Отклонено{% endif %}
+              </span>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div style="color:var(--warm-gray);font-size:13px;padding:.5rem 0">
+              Вы ещё не откликались на вакансии.<br>
+              <a href="{{ url_for('jobs') }}" style="color:var(--rose);font-weight:500">Смотреть вакансии →</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+<script>
+function setProfType(type, btn) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('profileTypeInput').value = type;
+  document.getElementById('profDesc').textContent =
+    type === 'anon' ? 'Имя и фото скрыты от работодателей' : 'Ваше имя и фото видны работодателям';
+}
+</script>
+{% endblock %}
