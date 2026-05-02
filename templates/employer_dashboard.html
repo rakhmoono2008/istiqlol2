@@ -79,6 +79,28 @@
         <button class="btn btn-sage" onclick="showTab('post', document.querySelector('.sb-item:nth-child(2)'))">+ Разместить вакансию</button>
       </div>
 
+
+      <!-- Верификация -->
+      {% if not company.verified %}
+      <div style="background:var(--gold-light);border-radius:14px;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+        <div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:3px">Пройдите верификацию</div>
+          <div style="font-size:12.5px;color:var(--warm-gray)">Верифицированные компании получают синюю галочку и больше откликов</div>
+        </div>
+        {% set vr = company.verification_requests | selectattr('status','eq','pending') | list %}
+        {% if vr %}
+          <span style="background:var(--gold-light);color:var(--gold);font-size:12px;font-weight:500;padding:6px 14px;border-radius:40px;border:.5px solid var(--gold)">⏳ Заявка отправлена</span>
+        {% else %}
+          <form method="POST" action="{{ url_for('request_verification') }}">
+            <button class="btn btn-sage" type="submit">Подать заявку</button>
+          </form>
+        {% endif %}
+      </div>
+      {% else %}
+      <div style="background:var(--sage-light);border-radius:14px;padding:.75rem 1.25rem;margin-bottom:1.5rem;font-size:13px;color:var(--sage);font-weight:500">
+        ✓ Компания верифицирована государством
+      </div>
+      {% endif %}
       <div class="emp-stats">
         <div class="emp-stat">
           <div class="emp-stat-n" style="color:var(--rose)">{{ active_jobs }}</div>
