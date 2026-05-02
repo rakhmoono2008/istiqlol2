@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600&display=swap');
+
+:root {
+  --rose: #E8856A;
+  --rose-light: #FDF0EC;
+  --rose-mid: #F5C4B3;
+  --sage: #4A7C6B;
+  --sage-light: #EAF3EE;
+  --cream: #FAF8F5;
+  --warm-gray: #6B6560;
+  --dark: #2C2420;
+  --gold: #C9A96E;
+  --gold-light: #FBF4E8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Outfit', sans-serif; background: var(--cream); color: var(--dark); }
+
+.landing-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 2rem; background: white;
+  border-bottom: 0.5px solid #E8E4DF;
+}
+.logo {
+  font-family: 'DM Serif Display', serif; font-size: 22px;
+  display: flex; align-items: center; gap: 8px;
+}
+.logo-dot { width: 8px; height: 8px; background: var(--rose); border-radius: 50%; display: inline-block; }
+
+.btn-primary {
+  padding: 10px 24px; border-radius: 40px; border: none;
+  background: var(--rose); color: white; font-family: 'Outfit', sans-serif;
+  font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s;
+}
+.btn-primary:hover { background: #D4735A; }
+
+.hero { padding: 5rem 2rem 3rem; max-width: 900px; margin: 0 auto; text-align: center; }
+.hero-badge {
+  display: inline-block; background: var(--rose-light); color: var(--rose);
+  font-size: 12px; font-weight: 500; padding: 6px 16px; border-radius: 40px;
+  margin-bottom: 1.5rem; letter-spacing: 0.5px;
+}
+.hero h1 {
+  font-family: 'DM Serif Display', serif; font-size: 52px;
+  line-height: 1.15; margin-bottom: 1.5rem;
+}
+.hero h1 em { color: var(--rose); font-style: italic; }
+.hero > p {
+  font-size: 18px; color: var(--warm-gray); line-height: 1.7;
+  max-width: 580px; margin: 0 auto 2.5rem; font-weight: 300;
+}
+
+.role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 680px; margin: 0 auto; }
+.role-card {
+  background: white; border: 0.5px solid #E8E4DF; border-radius: 20px;
+  padding: 2rem 1.5rem; cursor: pointer; transition: all 0.25s;
+  text-align: left; position: relative; overflow: hidden;
+}
+.role-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(232,133,106,0.12); }
+.role-card.seeker:hover { border-color: var(--rose); }
+.role-card.employer:hover { border-color: var(--sage); }
+.role-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; margin-bottom: 1rem;
+}
+.role-card.seeker .role-icon { background: var(--rose-light); }
+.role-card.employer .role-icon { background: var(--sage-light); }
+.role-card h3 { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
+.role-card > p { font-size: 14px; color: var(--warm-gray); line-height: 1.5; }
+.arrow { position: absolute; right: 1.5rem; bottom: 1.5rem; font-size: 20px; color: var(--rose); }
+
+.stats-row {
+  display: flex; justify-content: center; gap: 3rem;
+  padding: 3rem 2rem; border-top: 0.5px solid #E8E4DF; margin-top: 3rem;
+}
+.stat { text-align: center; }
+.stat-num { font-family: 'DM Serif Display', serif; font-size: 32px; }
+.stat-label { font-size: 13px; color: var(--warm-gray); margin-top: 4px; }

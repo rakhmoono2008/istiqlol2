@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Istiqlol — Карьерная платформа для женщин</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --rose:#E8856A;--rose-light:#FDF0EC;--rose-mid:#F5C4B3;
+  --sage:#4A7C6B;--sage-light:#EAF3EE;
+  --cream:#FAF8F5;--warm-gray:#6B6560;--dark:#2C2420;
+  --gold:#C9A96E;--gold-light:#FBF4E8;
+  --border:#E8E4DF;
+}
+body{font-family:'Outfit',sans-serif;background:var(--cream);color:var(--dark);min-height:100vh}
+.screen{display:none}
+.screen.active{display:block}
+
+/* ───── NAV ───── */
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;height:58px;background:#fff;
+  border-bottom:.5px solid var(--border);
+  position:sticky;top:0;z-index:200;
+}
+.logo{font-family:'DM Serif Display',serif;font-size:21px;display:flex;align-items:center;gap:7px;cursor:pointer}
+.logo-dot{width:8px;height:8px;background:var(--rose);border-radius:50%}
+.nav-links{display:flex;gap:2rem}
+.nav-link{font-size:14px;color:var(--warm-gray);cursor:pointer;padding:4px 0;border-bottom:2px solid transparent;transition:.2s}
+.nav-link:hover,.nav-link.active{color:var(--dark);border-bottom-color:var(--rose)}
+.nav-right{display:flex;gap:10px;align-items:center}
+.btn{padding:8px 20px;border-radius:40px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:.2s}
+.btn-rose{background:var(--rose);color:#fff}.btn-rose:hover{background:#d4735a}
+.btn-outline{background:transparent;border:1.5px solid var(--rose);color:var(--rose)}.btn-outline:hover{background:var(--rose-light)}
+.btn-sage{background:var(--sage);color:#fff}.btn-sage:hover{background:#3a6558}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--warm-gray);padding:7px 16px}.btn-ghost:hover{border-color:var(--rose);color:var(--rose)}
+
+/* ───── LANDING ───── */
+#screen-landing{background:var(--cream)}
+.hero{max-width:920px;margin:0 auto;padding:5rem 2rem 2.5rem;text-align:center}
+.hero-badge{display:inline-block;background:var(--rose-light);color:var(--rose);font-size:12px;font-weight:500;padding:5px 16px;border-radius:40px;margin-bottom:1.5rem;letter-spacing:.4px}
+.hero h1{font-family:'DM Serif Display',serif;font-size:54px;line-height:1.13;margin-bottom:1.4rem}
+.hero h1 em{color:var(--rose);font-style:italic}
+.hero>p{font-size:17px;color:var(--warm-gray);line-height:1.75;max-width:560px;margin:0 auto 2.5rem;font-weight:300}
+.role-cards{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:660px;margin:0 auto}
+.role-card{background:#fff;border:.5px solid var(--border);border-radius:20px;padding:2rem 1.5rem 1.75rem;cursor:pointer;transition:.25s;text-align:left;position:relative;overflow:hidden}
+.role-card:hover{transform:translateY(-5px);box-shadow:0 14px 36px rgba(232,133,106,.13)}
+.role-card.seeker:hover{border-color:var(--rose)}
+.role-card.employer:hover{border-color:var(--sage)}
+.role-icon{width:50px;height:50px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:1rem}
+.role-card.seeker .role-icon{background:var(--rose-light)}
+.role-card.employer .role-icon{background:var(--sage-light)}
+.role-card h3{font-size:17px;font-weight:500;margin-bottom:5px}
+.role-card p{font-size:13px;color:var(--warm-gray);line-height:1.5}
+.role-arrow{position:absolute;right:1.5rem;bottom:1.5rem;font-size:18px}
+.role-card.seeker .role-arrow{color:var(--rose)}
+.role-card.employer .role-arrow{color:var(--sage)}
+.stats-strip{display:flex;justify-content:center;gap:4rem;padding:2.5rem 2rem;border-top:.5px solid var(--border);max-width:920px;margin:2.5rem auto 0}
+.stat-num{font-family:'DM Serif Display',serif;font-size:34px;color:var(--dark)}
+.stat-label{font-size:13px;color:var(--warm-gray);margin-top:3px}
+
+/* ───── SEEKER LAYOUT ───── */
+.dash-wrap{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 58px)}
+.sidebar{background:#fff;border-right:.5px solid var(--border);padding:1.25rem .875rem;display:flex;flex-direction:column;gap:1.5rem}
+.sb-user{display:flex;align-items:center;gap:10px;padding:.6rem .5rem}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--rose-light);color:var(--rose);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:14px;flex-shrink:0}
+.sb-name{font-size:14px;font-weight:500}
+.sb-role{font-size:12px;color:var(--warm-gray)}
+.sb-nav{display:flex;flex-direction:column;gap:3px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:10px;font-size:14px;color:var(--warm-gray);cursor:pointer;transition:.15s}
+.sb-item:hover{background:var(--cream);color:var(--dark)}
+.sb-item.active{background:var(--rose-light);color:var(--rose);font-weight:500}
+.sb-icon{font-size:15px;width:18px;text-align:center}
+.content{padding:2rem;background:var(--cream);overflow-y:auto}
+.c-header{margin-bottom:1.75rem}
+.c-header h2{font-family:'DM Serif Display',serif;font-size:27px;margin-bottom:3px}
+.c-header p{font-size:13px;color:var(--warm-gray)}
+
+/* ───── HOME TAB ───── */
+.ai-banner{background:linear-gradient(135deg,#2c2420,#4a3830);border-radius:16px;padding:1.4rem 1.5rem;display:flex;align-items:center;gap:1.4rem;margin-bottom:1.75rem}
+.ai-ico{width:46px;height:46px;background:var(--rose);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ai-txt h3{color:#fff;font-size:15px;font-weight:500;margin-bottom:3px}
+.ai-txt p{color:rgba(255,255,255,.58);font-size:12.5px}
+.ai-score{background:rgba(255,255,255,.1);border-radius:10px;padding:7px 15px;text-align:center;flex-shrink:0}
+.score-n{color:var(--gold);font-family:'DM Serif Display',serif;font-size:26px}
+.score-l{color:rgba(255,255,255,.45);font-size:10.5px}
+.filter-row{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap}
+.chip{padding:5px 15px;border-radius:40px;font-size:13px;cursor:pointer;border:.5px solid var(--border);background:#fff;color:var(--warm-gray);transition:.15s}
+.chip:hover{border-color:var(--rose);color:var(--rose)}
+.chip.on{background:var(--rose);color:#fff;border-color:var(--rose)}
+.jobs-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem}
+.job-card{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.2rem;cursor:pointer;transition:.2s}
+.job-card:hover{border-color:var(--rose);transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.06)}
+.job-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.7rem}
+.co-logo{width:42px;height:42px;border-radius:10px;background:var(--sage-light);display:flex;align-items:center;justify-content:center;font-size:18px}
+.match-badge{background:var(--sage-light);color:var(--sage);font-size:11.5px;font-weight:500;padding:3px 9px;border-radius:40px}
+.job-title{font-size:15px;font-weight:500;margin-bottom:3px}
+.job-co{font-size:12.5px;color:var(--warm-gray);margin-bottom:.65rem}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.65rem}
+.tag{background:var(--cream);border:.5px solid var(--border);border-radius:5px;padding:2px 9px;font-size:11.5px;color:var(--warm-gray)}
+.job-foot{display:flex;justify-content:space-between;align-items:center;border-top:.5px solid #f0ede8;padding-top:.65rem}
+.salary{font-size:14px;font-weight:500}
+.loc{font-size:12px;color:var(--warm-gray)}
+
+/* ───── HOME COURSES STRIP ───── */
+.section-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.section-title-row h3{font-family:'DM Serif Display',serif;font-size:22px}
+.see-all{font-size:13px;color:var(--rose);cursor:pointer;font-weight:500}
+.see-all:hover{text-decoration:underline}
+.home-courses-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.875rem;margin-bottom:2rem}
+.hc-card{background:#fff;border:.5px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:.2s}
+.hc-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.07);border-color:#d4c5be}
+.hc-thumb{height:72px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.hc-body{padding:.75rem .9rem}
+.hc-cat{font-size:10px;font-weight:600;text-transform:uppercase;color:var(--rose);letter-spacing:.5px;margin-bottom:4px}
+.hc-title{font-size:13px;font-weight:500;margin-bottom:5px;line-height:1.3}
+.hc-meta{display:flex;justify-content:space-between;align-items:center}
+.hc-hours{font-size:11px;color:var(--warm-gray)}
+.cert-pip{background:var(--gold-light);color:var(--gold);font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px}
+
+/* ───── COURSES TAB ───── */
+.courses-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.course-card{background:#fff;border:.5px solid var(--border);border-radius:15px;overflow:hidden;cursor:pointer;transition:.2s}
+.course-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.06)}
+.c-thumb{height:88px;display:flex;align-items:center;justify-content:center;font-size:34px}
+.c-body{padding:.9rem 1rem}
+.c-cat{font-size:10.5px;font-weight:600;text-transform:uppercase;color:var(--rose);letter-spacing:.5px;margin-bottom:5px}
+.c-title{font-size:14px;font-weight:500;margin-bottom:7px;line-height:1.35}
+.c-meta{font-size:12px;color:var(--warm-gray);display:flex;justify-content:space-between;align-items:center}
+.cert-badge{display:inline-flex;align-items:center;gap:3px;background:var(--gold-light);color:var(--gold);font-size:10.5px;font-weight:500;padding:2px 8px;border-radius:5px}
+.prog-bar{height:3px;background:#f0ede8;border-radius:3px;margin-top:8px;overflow:hidden}
+.prog-fill{height:100%;background:var(--rose);border-radius:3px;transition:.3s}
+.enroll-btn{display:block;width:100%;margin-top:10px;padding:8px;border-radius:8px;border:.5px solid var(--rose);color:var(--rose);background:none;font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:500;cursor:pointer;transition:.15s;text-align:center}
+.enroll-btn:hover{background:var(--rose);color:#fff}
+
+/* ───── BIOGRAPHIES ───── */
+.bio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.bio-card{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.25rem;cursor:pointer;transition:.2s;text-align:center}
+.bio-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.06)}
+.bio-av{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto .75rem}
+.bio-name{font-size:14.5px;font-weight:500;margin-bottom:3px}
+.bio-role{font-size:12px;color:var(--warm-gray);margin-bottom:.7rem}
+.bio-quote{font-size:12.5px;color:var(--warm-gray);font-style:italic;line-height:1.55}
+
+/* ───── PROFILE ───── */
+.profile-layout{display:grid;grid-template-columns:255px 1fr;gap:1.25rem}
+.prof-card{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.4rem;text-align:center}
+.prof-av{width:76px;height:76px;border-radius:50%;background:var(--rose-light);color:var(--rose);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:500;margin:0 auto .9rem}
+.prof-name{font-size:17px;font-weight:500;margin-bottom:3px}
+.prof-sub{font-size:12.5px;color:var(--warm-gray);margin-bottom:.9rem}
+.type-toggle{display:flex;background:var(--cream);border-radius:9px;padding:3px;margin-bottom:.7rem}
+.type-btn{flex:1;padding:5px 7px;border-radius:7px;font-size:12px;cursor:pointer;border:none;background:transparent;color:var(--warm-gray);font-family:'Outfit',sans-serif;transition:.15s}
+.type-btn.active{background:#fff;color:var(--dark);font-weight:500;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.type-desc{font-size:11.5px;color:var(--warm-gray);margin-bottom:1rem}
+.skills-lbl{font-size:12.5px;font-weight:500;text-align:left;margin-bottom:5px}
+.skills-wrap{display:flex;flex-wrap:wrap;gap:5px}
+.skill-pill{background:var(--rose-light);color:var(--rose);font-size:11.5px;padding:3px 11px;border-radius:40px}
+.p-section{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.25rem;margin-bottom:.875rem}
+.p-sec-title{font-size:14.5px;font-weight:500;margin-bottom:.9rem;display:flex;justify-content:space-between;align-items:center}
+.edit-link{font-size:12.5px;color:var(--rose);cursor:pointer}
+.exp-item{display:flex;gap:11px;margin-bottom:.9rem}
+.exp-ico{width:34px;height:34px;background:var(--cream);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.exp-t{font-size:13.5px;font-weight:500}
+.exp-s{font-size:12px;color:var(--warm-gray)}
+.certs-row{display:flex;gap:7px;flex-wrap:wrap}
+
+/* ───── EMPLOYER ───── */
+.emp-header{background:#fff;border-bottom:.5px solid var(--border);padding:1.25rem 2rem;display:flex;justify-content:space-between;align-items:center}
+.verified-badge{display:inline-flex;align-items:center;gap:4px;background:#eff6ff;color:#1d6fa5;font-size:11.5px;font-weight:500;padding:3px 10px;border-radius:40px}
+.emp-content{padding:2rem;background:var(--cream)}
+.emp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+.emp-stat{background:#fff;border:.5px solid var(--border);border-radius:13px;padding:1.2rem}
+.emp-stat-n{font-family:'DM Serif Display',serif;font-size:27px;margin-bottom:3px}
+.emp-stat-l{font-size:11.5px;color:var(--warm-gray)}
+.emp-section{background:#fff;border:.5px solid var(--border);border-radius:15px;overflow:hidden}
+.emp-sec-head{padding:1rem 1.4rem;border-bottom:.5px solid var(--border);font-size:14.5px;font-weight:500}
+.job-row{padding:1rem 1.4rem;display:flex;justify-content:space-between;align-items:center;border-bottom:.5px solid #f5f3f0}
+.job-row:last-child{border-bottom:none}
+.active-badge{background:var(--sage-light);color:var(--sage);font-size:11.5px;font-weight:500;padding:3px 11px;border-radius:40px}
+.post-form{background:#fff;border:.5px solid var(--border);border-radius:15px;padding:1.5rem;max-width:700px}
+.form-label{font-size:12.5px;font-weight:500;color:var(--warm-gray);display:block;margin-bottom:5px}
+.form-input{width:100%;padding:9px 13px;border:.5px solid var(--border);border-radius:9px;font-family:'Outfit',sans-serif;font-size:13.5px;background:var(--cream);outline:none;transition:border-color .15s;color:var(--dark)}
+.form-input:focus{border-color:var(--rose);background:#fff}
+.form-row{margin-bottom:1.1rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.1rem}
+</style>
+</head>
+<body>
+
+<!-- ═══════ NAV ═══════ -->
+<nav id="mainNav">
+  <div class="logo" onclick="goHome()"><div class="logo-dot"></div>Istiqlol</div>
+  <div class="nav-links" id="seekerLinks" style="display:none">
+    <span class="nav-link active" onclick="showTab('home',this)">Главная</span>
+    <span class="nav-link" onclick="showTab('courses',this)">Курсы</span>
+    <span class="nav-link" onclick="showTab('biographies',this)">Биографии</span>
+    <span class="nav-link" onclick="showTab('profile',this)">Профиль</span>
+  </div>
+  <div class="nav-right">
+    <div id="authBtns" style="display:flex;gap:8px">
+      <button class="btn btn-outline" onclick="enterAs('seeker')">Войти</button>
+      <button class="btn btn-rose" onclick="enterAs('seeker')">Войти через One ID</button>
+    </div>
+    <button class="btn btn-ghost" id="backBtn" onclick="goHome()" style="display:none">← Выход</button>
+  </div>
+</nav>
+
+<!-- ═══════ LANDING ═══════ -->
+<div class="screen active" id="screen-landing">
+  <div class="hero">
+    <div class="hero-badge">✦ Платформа только для женщин Узбекистана</div>
+    <h1>Карьера, которую<br>заслуживаете <em>вы</em></h1>
+    <p>Умные AI-рекомендации, государственная верификация и сообщество поддержки для каждой женщины</p>
+    <div class="role-cards">
+      <div class="role-card seeker" onclick="enterAs('seeker')">
+        <div class="role-icon">👩</div>
+        <h3>Я ищу работу</h3>
+        <p>AI подберёт вакансии по вашим навыкам и опыту</p>
+        <span class="role-arrow">→</span>
+      </div>
+      <div class="role-card employer" onclick="enterAs('employer')">
+        <div class="role-icon">🏢</div>
+        <h3>Я работодатель</h3>
+        <p>Разместите вакансию и найдите квалифицированных сотрудников</p>
+        <span class="role-arrow">→</span>
+      </div>
+    </div>
+  </div>
+  <div class="stats-strip">
+    <div class="stat"><div class="stat-num">12 400+</div><div class="stat-label">активных вакансий</div></div>
+    <div class="stat"><div class="stat-num">8 200</div><div class="stat-label">соискателей</div></div>
+    <div class="stat"><div class="stat-num">940</div><div class="stat-label">верифицированных компаний</div></div>
+    <div class="stat"><div class="stat-num">320+</div><div class="stat-label">курсов с сертификатами</div></div>
+  </div>
+</div>
+
+<!-- ═══════ SEEKER ═══════ -->
+<div class="screen" id="screen-seeker">
+  <div class="dash-wrap">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sb-user">
+        <div class="avatar">М</div>
+        <div>
+          <div class="sb-name">Малика А.</div>
+          <div class="sb-role">Соискатель</div>
+        </div>
+      </div>
+      <nav class="sb-nav">
+        <div class="sb-item active" onclick="showTab('home',null,this)"><span class="sb-icon">✦</span>Главная</div>
+        <div class="sb-item" onclick="showTab('courses',null,this)"><span class="sb-icon">◈</span>Курсы</div>
+        <div class="sb-item" onclick="showTab('biographies',null,this)"><span class="sb-icon">◎</span>Биографии</div>
+        <div class="sb-item" onclick="showTab('profile',null,this)"><span class="sb-icon">○</span>Профиль</div>
+      </nav>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content">
+
+      <!-- HOME -->
+      <div id="tab-home">
+        <div class="c-header">
+          <h2>Добро пожаловать, Малика 👋</h2>
+          <p>AI нашёл для вас 18 подходящих вакансий и 6 курсов сегодня</p>
+        </div>
+
+        <!-- AI BANNER -->
+        <div class="ai-banner">
+          <div class="ai-ico">🤖</div>
+          <div class="ai-txt" style="flex:1">
+            <h3>AI-рекомендации обновлены</h3>
+            <p>На основе ваших навыков: UX Design, Figma, Prototyping · Ташкент</p>
+          </div>
+          <div class="ai-score">
+            <div class="score-n">94%</div>
+            <div class="score-l">совпадение</div>
+          </div>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filter-row">
+          <div class="chip on">Все</div>
+          <div class="chip" onclick="toggleChip(this)">Ташкент</div>
+          <div class="chip" onclick="toggleChip(this)">Удалённо</div>
+          <div class="chip" onclick="toggleChip(this)">Full-time</div>
+          <div class="chip" onclick="toggleChip(this)">IT</div>
+          <div class="chip" onclick="toggleChip(this)">Маркетинг</div>
+        </div>
+
+        <!-- VACANCIES -->
+        <div class="section-title-row">
+          <h3>Рекомендуемые вакансии</h3>
+          <span class="see-all">Смотреть все →</span>
+        </div>
+        <div class="jobs-grid">
+          <div class="job-card">
+            <div class="job-top"><div class="co-logo">🎨</div><span class="match-badge">94% совпадение</span></div>
+            <div class="job-title">UX/UI Дизайнер</div>
+            <div class="job-co">Click Technologies · Ташкент</div>
+            <div class="tags"><span class="tag">Figma</span><span class="tag">Mobile</span><span class="tag">Research</span></div>
+            <div class="job-foot"><span class="salary">5–8 млн сум</span><span class="loc">📍 2.4 км</span></div>
+          </div>
+          <div class="job-card">
+            <div class="job-top"><div class="co-logo">💻</div><span class="match-badge">88% совпадение</span></div>
+            <div class="job-title">Product Designer</div>
+            <div class="job-co">Uzcard · Удалённо</div>
+            <div class="tags"><span class="tag">Prototyping</span><span class="tag">User Testing</span></div>
+            <div class="job-foot"><span class="salary">$800–1200</span><span class="loc">🌐 Удалённо</span></div>
+          </div>
+          <div class="job-card">
+            <div class="job-top"><div class="co-logo">📊</div><span class="match-badge">82% совпадение</span></div>
+            <div class="job-title">Marketing Manager</div>
+            <div class="job-co">Hamkorbank · Ташкент</div>
+            <div class="tags"><span class="tag">Digital</span><span class="tag">SMM</span><span class="tag">Analytics</span></div>
+            <div class="job-foot"><span class="salary">4–6 млн сум</span><span class="loc">📍 5.1 км</span></div>
+          </div>
+          <div class="job-card">
+            <div class="job-top"><div class="co-logo">🌿</div><span class="match-badge">79% совпадение</span></div>
+            <div class="job-title">Brand Designer</div>
+            <div class="job-co">Beeline UZ · Hybrid</div>
+            <div class="tags"><span class="tag">Branding</span><span class="tag">Illustrator</span></div>
+            <div class="job-foot"><span class="salary">6–9 млн сум</span><span class="loc">📍 3.7 км</span></div>
+          </div>
+        </div>
+
+        <!-- ── КУРСЫ НА ГЛАВНОЙ ── -->
+        <div class="section-title-row" style="margin-top:.5rem">
+          <h3>Рекомендуемые курсы</h3>
+          <span class="see-all" onclick="showTab('courses')">Все курсы →</span>
+        </div>
+        <div class="home-courses-grid">
+          <div class="hc-card">
+            <div class="hc-thumb" style="background:#FDF0EC">🎨</div>
+            <div class="hc-body">
+              <div class="hc-cat">Дизайн</div>
+              <div class="hc-title">UX Research & Design</div>
+              <div class="hc-meta"><span class="hc-hours">42 ч.</span><span class="cert-pip">✦ Серт.</span></div>
+            </div>
+          </div>
+          <div class="hc-card">
+            <div class="hc-thumb" style="background:#EAF3EE">💻</div>
+            <div class="hc-body">
+              <div class="hc-cat">Программирование</div>
+              <div class="hc-title">Python для аналитиков</div>
+              <div class="hc-meta"><span class="hc-hours">60 ч.</span><span class="cert-pip">✦ Серт.</span></div>
+            </div>
+          </div>
+          <div class="hc-card">
+            <div class="hc-thumb" style="background:#FBF4E8">📊</div>
+            <div class="hc-body">
+              <div class="hc-cat">Маркетинг</div>
+              <div class="hc-title">Digital Marketing Pro</div>
+              <div class="hc-meta"><span class="hc-hours">35 ч.</span><span class="cert-pip">✦ Серт.</span></div>
+            </div>
+          </div>
+          <div class="hc-card">
+            <div class="hc-thumb" style="background:#F0EBF8">🗣️</div>
+            <div class="hc-body">
+              <div class="hc-cat">Лидерство</div>
+              <div class="hc-title">Лидерство для женщин</div>
+              <div class="hc-meta"><span class="hc-hours">18 ч.</span><span class="cert-pip">✦ Серт.</span></div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /tab-home -->
+
+      <!-- COURSES -->
+      <div id="tab-courses" style="display:none">
+        <div class="c-header">
+          <h2>Курсы и обучение</h2>
+          <p>Получите сертификаты и повысьте ценность своего профиля</p>
+        </div>
+        <div class="filter-row">
+          <div class="chip on">Все</div>
+          <div class="chip" onclick="toggleChip(this)">Дизайн</div>
+          <div class="chip" onclick="toggleChip(this)">IT</div>
+          <div class="chip" onclick="toggleChip(this)">Маркетинг</div>
+          <div class="chip" onclick="toggleChip(this)">Финансы</div>
+          <div class="chip" onclick="toggleChip(this)">Лидерство</div>
+        </div>
+        <div class="courses-grid">
+          <div class="course-card">
+            <div class="c-thumb" style="background:#FDF0EC">🎨</div>
+            <div class="c-body">
+              <div class="c-cat">Дизайн</div>
+              <div class="c-title">UX Research & Design</div>
+              <div class="c-meta"><span>42 часа · Средний</span><span class="cert-badge">✦ Сертификат</span></div>
+              <div class="prog-bar"><div class="prog-fill" style="width:65%"></div></div>
+              <button class="enroll-btn">Продолжить →</button>
+            </div>
+          </div>
+          <div class="course-card">
+            <div class="c-thumb" style="background:#EAF3EE">💻</div>
+            <div class="c-body">
+              <div class="c-cat">Программирование</div>
+              <div class="c-title">Python для аналитиков данных</div>
+              <div class="c-meta"><span>60 часов · С нуля</span><span class="cert-badge">✦ Сертификат</span></div>
+              <div class="prog-bar"><div class="prog-fill" style="width:0%"></div></div>
+              <button class="enroll-btn">Записаться →</button>
+            </div>
+          </div>
+          <div class="course-card">
+            <div class="c-thumb" style="background:#FBF4E8">📊</div>
+            <div class="c-body">
+              <div class="c-cat">Маркетинг</div>
+              <div class="c-title">Digital Marketing Pro</div>
+              <div class="c-meta"><span>35 часов · Средний</span><span class="cert-badge">✦ Сертификат</span></div>
+              <div class="prog-bar"><div class="prog-fill" style="width:30%"></div></div>
+              <button class="enroll-btn">Продолжить →</button>
+            </div>
+          </div>
+          <div class="course-card">
+            <div class="c-thumb" style="background:#F0EBF8">🗣️</div>
+            <div class="c-body">
+              <div class="c-cat">Мягкие навыки</div>
+              <div class="c-title">Лидерство для женщин</div>
+              <div class="c-meta"><span>18 часов · Начальный</span><span class="cert-badge">✦ Сертификат</span></div>
+              <div class="prog-bar"><div class="prog-fill" style="width:0%"></div></div>
+              <button class="enroll-btn">Записаться →</button>
+            </div>
+          </div>
+          <div class="course-card">
+            <div class="c-thumb" style="background:#EAF3EE">📈</div>
+            <div class="c-body">
+              <div class="c-cat">Финансы</div>
+              <div class="c-title">Финансовая грамотность</div>
+              <div class="c-meta"><span>24 часа · Начальный</span><span class="cert-badge">✦ Сертификат</span></div>
+              <div class="prog-bar"><div class="prog-fill" style="width:0%"></div></div>
+              <button class="enroll-btn">Записаться →</button>
+            </div>
+          </div>
+          <div class="course-card">
+            <div class="c-thumb" style="background:#FDF0EC">🤝</div>
+            <div class="c-body">
+              <div class="c-cat">HR</div>
+              <div class="c-title">Управление персоналом</div>
+              <div class="c-meta"><span>48 часов · Средний</span><span class="cert-badge">✦ Сертификат</span></div>
+              <div class="prog-bar"><div class="prog-fill" style="width:0%"></div></div>
+              <button class="enroll-btn">Записаться →</button>
+            </div>
+          </div>
+          <div class="course-card">
+            <div class="c-thumb" style="background:#EFF6FF">☁️</div>
+            <div class="c-body">
+              <div class="c-cat">IT</div>
+              <div class="c-title">Основы облачных технологий</div>
+              <div class="c-meta"><span>30 часов · Начальный</span><span class="cert-badge">✦ Сертификат</span></div>
+              <div class="prog-bar"><div class="prog-fill" style="width:0%"></div></div>
+              <button class="enroll-btn">Записаться →</button>
+            </div>
+          </div>
+          <div class="course-card">
+            <div class="c-thumb" style="background:#FBF4E8">🧠</div>
+            <div class="c-body">
+              <div class="c-cat">Предпринимательство</div>
+              <div class="c-title">Свой бизнес с нуля</div>
+              <div class="c-meta"><span>52 часа · Средний</span><span class="cert-badge">✦ Сертификат</span></div>
+              <div class="prog-bar"><div class="prog-fill" style="width:0%"></div></div>
+              <button class="enroll-btn">Записаться →</button>
+            </div>
+          </div>
+          <div class="course-card">
+            <div class="c-thumb" style="background:#EAF3EE">🌐</div>
+            <div class="c-body">
+              <div class="c-cat">Языки</div>
+              <div class="c-title">Деловой английский</div>
+              <div class="c-meta"><span>40 часов · Средний</span><span class="cert-badge">✦ Сертификат</span></div>
+              <div class="prog-bar"><div class="prog-fill" style="width:10%"></div></div>
+              <button class="enroll-btn">Продолжить →</button>
+            </div>
+          </div>
+        </div>
+      </div><!-- /tab-courses -->
+
+      <!-- BIOGRAPHIES -->
+      <div id="tab-biographies" style="display:none">
+        <div class="c-header">
+          <h2>Истории успеха</h2>
+          <p>Вдохновляйтесь историями женщин Узбекистана</p>
+        </div>
+        <div class="bio-grid">
+          <div class="bio-card">
+            <div class="bio-av" style="background:#FDF0EC">👩‍💼</div>
+            <div class="bio-name">Нилуфар Рашидова</div>
+            <div class="bio-role">CEO · TechUz Solutions</div>
+            <div class="bio-quote">"Главное — не бояться начинать. Каждая ошибка — это урок"</div>
+          </div>
+          <div class="bio-card">
+            <div class="bio-av" style="background:#EAF3EE">👩‍🔬</div>
+            <div class="bio-name">Дилрабо Юсупова</div>
+            <div class="bio-role">Data Scientist · AI Lab UZ</div>
+            <div class="bio-quote">"Технологии не имеют пола. Только знания имеют значение"</div>
+          </div>
+          <div class="bio-card">
+            <div class="bio-av" style="background:#FBF4E8">👩‍🎨</div>
+            <div class="bio-name">Камола Азимова</div>
+            <div class="bio-role">Creative Director · Adept Agency</div>
+            <div class="bio-quote">"Творчество открыло мне двери, которые я не могла найти"</div>
+          </div>
+          <div class="bio-card">
+            <div class="bio-av" style="background:#F0EBF8">👩‍⚕️</div>
+            <div class="bio-name">Зулайхо Мирзаева</div>
+            <div class="bio-role">Chief Medical Officer</div>
+            <div class="bio-quote">"Образование — единственное, что нельзя отнять"</div>
+          </div>
+          <div class="bio-card">
+            <div class="bio-av" style="background:#FDF0EC">👩‍💻</div>
+            <div class="bio-name">Муаззам Хасанова</div>
+            <div class="bio-role">CTO · Startup Hub Tashkent</div>
+            <div class="bio-quote">"Код не делает различий между мужчинами и женщинами"</div>
+          </div>
+          <div class="bio-card">
+            <div class="bio-av" style="background:#EAF3EE">👩‍🏫</div>
+            <div class="bio-name">Барно Турсунова</div>
+            <div class="bio-role">Professor · TUIT University</div>
+            <div class="bio-quote">"Я учу следующее поколение вдохновлённых женщин"</div>
+          </div>
+        </div>
+      </div><!-- /tab-biographies -->
+
+      <!-- PROFILE -->
+      <div id="tab-profile" style="display:none">
+        <div class="c-header">
+          <h2>Мой профиль</h2>
+          <p>Управляйте видимостью и информацией</p>
+        </div>
+        <div class="profile-layout">
+          <div>
+            <div class="prof-card">
+              <div class="prof-av">М</div>
+              <div class="prof-name">Малика Азимова</div>
+              <div class="prof-sub">UX Designer · Ташкент</div>
+              <div class="type-toggle">
+                <button class="type-btn" onclick="switchProfile('anon',this)">Анонимный</button>
+                <button class="type-btn active" onclick="switchProfile('open',this)">Открытый</button>
+              </div>
+              <div class="type-desc" id="profDesc">Ваше имя и фото видны работодателям</div>
+              <div class="skills-lbl">Навыки</div>
+              <div class="skills-wrap">
+                <span class="skill-pill">Figma</span>
+                <span class="skill-pill">UX Research</span>
+                <span class="skill-pill">Prototyping</span>
+                <span class="skill-pill">Wireframing</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="p-section">
+              <div class="p-sec-title">Опыт работы <span class="edit-link">+ Добавить</span></div>
+              <div class="exp-item"><div class="exp-ico">🏢</div><div><div class="exp-t">Lead UX Designer</div><div class="exp-s">Click Technologies · 2022–н.в.</div></div></div>
+              <div class="exp-item"><div class="exp-ico">💡</div><div><div class="exp-t">UI Designer</div><div class="exp-s">Freelance · 2020–2022</div></div></div>
+            </div>
+            <div class="p-section">
+              <div class="p-sec-title">Образование <span class="edit-link">+ Добавить</span></div>
+              <div class="exp-item"><div class="exp-ico">🎓</div><div><div class="exp-t">Бакалавр · Информационные технологии</div><div class="exp-s">ТАТУ · 2016–2020</div></div></div>
+            </div>
+            <div class="p-section">
+              <div class="p-sec-title">Сертификаты <span class="edit-link">+ Добавить</span></div>
+              <div class="certs-row">
+                <span class="cert-badge">✦ Google UX Design</span>
+                <span class="cert-badge">✦ Figma Advanced</span>
+                <span class="cert-badge">✦ Design Thinking</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /tab-profile -->
+
+    </main>
+  </div>
+</div><!-- /screen-seeker -->
+
+<!-- ═══════ EMPLOYER ═══════ -->
+<div class="screen" id="screen-employer">
+  <div class="emp-header">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="avatar" style="background:var(--sage-light);color:var(--sage)">C</div>
+      <div>
+        <div style="font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px">
+          Click Technologies
+          <span class="verified-badge">✓ Верифицировано</span>
+        </div>
+        <div style="font-size:12.5px;color:var(--warm-gray)">Работодатель · Ташкент</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="showEmpView('list')">Мои вакансии</button>
+      <button class="btn btn-sage" onclick="showEmpView('post')">+ Разместить вакансию</button>
+    </div>
+  </div>
+
+  <div class="emp-content">
+    <div class="emp-stats">
+      <div class="emp-stat"><div class="emp-stat-n" style="color:var(--rose)">12</div><div class="emp-stat-l">Активных вакансий</div></div>
+      <div class="emp-stat"><div class="emp-stat-n" style="color:var(--sage)">284</div><div class="emp-stat-l">Всего откликов</div></div>
+      <div class="emp-stat"><div class="emp-stat-n">43</div><div class="emp-stat-l">Просмотры сегодня</div></div>
+      <div class="emp-stat"><div class="emp-stat-n" style="color:var(--gold)">8</div><div class="emp-stat-l">На рассмотрении</div></div>
+    </div>
+
+    <!-- LIST -->
+    <div id="emp-list" class="emp-section">
+      <div class="emp-sec-head">Ваши вакансии</div>
+      <div class="job-row">
+        <div>
+          <div style="font-size:14.5px;font-weight:500;margin-bottom:3px">UX/UI Дизайнер</div>
+          <div style="font-size:12px;color:var(--warm-gray)">Опубликовано 3 дня назад · 47 откликов</div>
+        </div>
+        <span class="active-badge">Активна</span>
+      </div>
+      <div class="job-row">
+        <div>
+          <div style="font-size:14.5px;font-weight:500;margin-bottom:3px">Frontend Developer</div>
+          <div style="font-size:12px;color:var(--warm-gray)">Опубликовано 7 дней назад · 89 откликов</div>
+        </div>
+        <span class="active-badge">Активна</span>
+      </div>
+      <div class="job-row">
+        <div>
+          <div style="font-size:14.5px;font-weight:500;margin-bottom:3px">Product Manager</div>
+          <div style="font-size:12px;color:var(--warm-gray)">Опубликовано 14 дней назад · 123 отклика</div>
+        </div>
+        <span class="active-badge">Активна</span>
+      </div>
+    </div>
+
+    <!-- POST FORM -->
+    <div id="emp-post" style="display:none" class="post-form">
+      <div style="font-size:17px;font-weight:500;margin-bottom:1.4rem">Новая вакансия</div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Название должности</label>
+          <input class="form-input" type="text" placeholder="UX/UI Дизайнер"/>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Категория</label>
+          <select class="form-input"><option>IT / Дизайн</option><option>Маркетинг</option><option>Финансы</option><option>HR</option><option>Образование</option></select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Зарплата (от)</label>
+          <input class="form-input" type="text" placeholder="5 000 000 сум"/>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Формат работы</label>
+          <select class="form-input"><option>Офис</option><option>Удалённо</option><option>Гибрид</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Описание вакансии</label>
+        <textarea class="form-input" rows="4" placeholder="Опишите обязанности, требования и условия работы..."></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Ключевые навыки (через запятую)</label>
+        <input class="form-input" type="text" placeholder="Figma, Prototyping, User Research, Wireframing"/>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:.5rem">
+        <button class="btn btn-sage" onclick="publishJob()">Опубликовать вакансию</button>
+        <button class="btn btn-ghost" onclick="showEmpView('list')">Отмена</button>
+      </div>
+    </div>
+  </div>
+</div><!-- /screen-employer -->
+
+<script>
+// ── state ──
+let currentRole = null;
+const TABS = ['home','courses','biographies','profile'];
+
+// ── navigation ──
+function enterAs(role) {
+  currentRole = role;
+  showScreen(role === 'seeker' ? 'seeker' : 'employer');
+  document.getElementById('authBtns').style.display = 'none';
+  document.getElementById('backBtn').style.display = 'block';
+  if (role === 'seeker') {
+    document.getElementById('seekerLinks').style.display = 'flex';
+    showTab('home');
+  }
+}
+
+function goHome() {
+  showScreen('landing');
+  document.getElementById('authBtns').style.display = 'flex';
+  document.getElementById('backBtn').style.display = 'none';
+  document.getElementById('seekerLinks').style.display = 'none';
+  currentRole = null;
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function showTab(tabKey, navEl, sbEl) {
+  TABS.forEach(t => {
+    const el = document.getElementById('tab-' + t);
+    if (el) el.style.display = t === tabKey ? 'block' : 'none';
+  });
+  // sync top nav
+  document.querySelectorAll('#seekerLinks .nav-link').forEach((el, i) => {
+    el.classList.toggle('active', TABS[i] === tabKey);
+  });
+  // sync sidebar
+  document.querySelectorAll('.sb-item').forEach((el, i) => {
+    el.classList.toggle('active', TABS[i] === tabKey);
+  });
+}
+
+function showEmpView(view) {
+  document.getElementById('emp-list').style.display = view === 'list' ? 'block' : 'none';
+  document.getElementById('emp-post').style.display = view === 'post' ? 'block' : 'none';
+}
+
+// ── interactions ──
+function toggleChip(el) {
+  el.classList.toggle('on');
+}
+
+function switchProfile(type, btn) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('profDesc').textContent =
+    type === 'anon' ? 'Имя и фото скрыты от работодателей' : 'Ваше имя и фото видны работодателям';
+}
+
+function publishJob() {
+  alert('✅ Вакансия успешно опубликована!');
+  showEmpView('list');
+}
+</script>
+</body>
+</html>

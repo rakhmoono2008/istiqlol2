@@ -1,0 +1,46 @@
+.page{min-height:100vh;background:var(--cream)}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:white;border-bottom:.5px solid var(--border);position:sticky;top:0;z-index:100}
+.logo{font-family:'DM Serif Display',serif;font-size:22px;display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;background:var(--rose);border-radius:50%}
+.coInfo{display:flex;align-items:center;gap:10px}
+.coName{font-size:15px;font-weight:500}
+.verBadge{background:#EFF6FF;color:#1D6FA5;font-size:12px;font-weight:500;padding:4px 12px;border-radius:40px}
+.backBtn{background:none;border:1.5px solid var(--border);padding:8px 16px;border-radius:40px;font-family:'Outfit',sans-serif;cursor:pointer;font-size:13px;color:var(--warm-gray)}
+.body{padding:2rem;max-width:1100px;margin:0 auto}
+.topRow{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem}
+.h2{font-family:'DM Serif Display',serif;font-size:28px;margin-bottom:4px}
+.sub{font-size:14px;color:var(--warm-gray)}
+.postBtn{padding:10px 24px;border-radius:40px;border:none;background:var(--sage);color:white;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .2s}
+.postBtn:hover{background:#3A6558}
+.statsGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+.statCard{background:white;border:.5px solid var(--border);border-radius:14px;padding:1.25rem}
+.statNum{font-family:'DM Serif Display',serif;font-size:28px;margin-bottom:4px}
+.statLabel{font-size:12px;color:var(--warm-gray)}
+.card{background:white;border:.5px solid var(--border);border-radius:16px;overflow:hidden}
+.cardHead{padding:1rem 1.5rem;border-bottom:.5px solid var(--border);font-weight:500;font-size:15px}
+.vacRow{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:.5px solid #F6F3F0;transition:background .15s}
+.vacRow:last-child{border-bottom:none}
+.vacRow:hover{background:#FAFAF8}
+.vacTitle{font-size:15px;font-weight:500;margin-bottom:4px}
+.vacMeta{font-size:13px;color:var(--warm-gray)}
+.vacRight{display:flex;align-items:center;gap:10px}
+.badge{font-size:12px;font-weight:500;padding:4px 12px;border-radius:40px}
+.badgeGreen{background:var(--sage-light);color:var(--sage)}
+.badgeGray{background:#F0EDE8;color:var(--warm-gray)}
+.editVacBtn{background:none;border:.5px solid var(--border);padding:6px 14px;border-radius:40px;font-family:'Outfit',sans-serif;cursor:pointer;font-size:13px;color:var(--warm-gray);transition:all .2s}
+.editVacBtn:hover{border-color:var(--rose);color:var(--rose)}
+.formCard{background:white;border:.5px solid var(--border);border-radius:16px;padding:2rem;max-width:720px}
+.formTitle{font-size:18px;font-weight:500;margin-bottom:1.5rem}
+.formGrid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.field{display:flex;flex-direction:column;gap:6px}
+.label{font-size:13px;font-weight:500;color:var(--warm-gray)}
+.input{padding:10px 14px;border:.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;background:var(--cream);outline:none;transition:border-color .2s;color:var(--dark)}
+.input:focus{border-color:var(--rose);background:white}
+.textarea{padding:10px 14px;border:.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;background:var(--cream);outline:none;resize:vertical;width:100%;color:var(--dark);transition:border-color .2s}
+.textarea:focus{border-color:var(--rose);background:white}
+.salaryRow{display:flex;gap:8px}
+.formActions{display:flex;gap:10px;margin-top:1.5rem}
+.submitBtn{padding:11px 28px;background:var(--sage);color:white;border:none;border-radius:40px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .2s}
+.submitBtn:hover{background:#3A6558}
+.cancelBtn{padding:11px 24px;background:none;border:1.5px solid var(--border);border-radius:40px;font-family:'Outfit',sans-serif;font-size:14px;cursor:pointer;color:var(--warm-gray);transition:all .2s}
+.cancelBtn:hover{border-color:var(--rose);color:var(--rose)}
