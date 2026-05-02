@@ -46,6 +46,77 @@ nav{
 
 /* ───── FOOTER ───── */
 footer{border-top:.5px solid var(--border);padding:2rem;text-align:center;font-size:12.5px;color:var(--warm-gray);margin-top:auto}
+
+/* ───── MOBILE ───── */
+@media(max-width:768px){
+  nav{padding:0 1rem;height:52px}
+  .nav-links{display:none}
+  .btn{padding:7px 14px;font-size:12px}
+  .nav-right{gap:6px}
+  .nav-right .btn-ghost{display:none}
+
+  /* Мобильное меню */
+  .mob-menu-btn{display:flex;flex-direction:column;gap:4px;cursor:pointer;padding:6px;border:none;background:none}
+  .mob-menu-btn span{width:20px;height:2px;background:var(--dark);border-radius:2px;transition:.2s}
+  .mob-drawer{position:fixed;top:52px;left:0;right:0;bottom:0;background:#fff;z-index:199;padding:1.5rem;display:none;flex-direction:column;gap:4px;overflow-y:auto}
+  .mob-drawer.open{display:flex}
+  .mob-link{font-size:16px;padding:12px 14px;border-radius:12px;color:var(--dark);display:block;font-weight:400}
+  .mob-link:hover,.mob-link.active{background:var(--rose-light);color:var(--rose)}
+  .mob-link.employer-link:hover,.mob-link.employer-link.active{background:var(--sage-light);color:var(--sage)}
+  .mob-divider{height:.5px;background:var(--border);margin:.5rem 0}
+  .mob-btn{display:block;width:100%;text-align:center;padding:12px;border-radius:12px;font-size:15px;font-weight:500;margin-top:.5rem}
+
+  /* Общие паддинги */
+  .page-wrap,.emp-content{padding:1rem}
+  .flashes{padding:.5rem 1rem}
+
+  /* Сетки */
+  .jobs-grid,.home-courses-grid,.courses-grid,.bio-grid,.features-grid,.emp-stats,.admin-stats{grid-template-columns:1fr!important}
+  .form-grid,.profile-layout,.dash-wrap{grid-template-columns:1fr!important}
+  .role-cards{grid-template-columns:1fr!important;max-width:100%}
+
+  /* Сайдбар → скрываем, заменяем нижней панелью */
+  .sidebar{display:none!important}
+  .content{padding:1rem}
+  .mob-bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:.5px solid var(--border);z-index:190;padding-bottom:env(safe-area-inset-bottom)}
+  .mob-bottom-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;font-size:10px;color:var(--warm-gray);cursor:pointer;border:none;background:none;font-family:'Outfit',sans-serif;gap:3px;transition:.15s}
+  .mob-bottom-btn.active{color:var(--rose)}
+  .mob-bottom-btn .mob-ico{font-size:18px}
+  .dash-wrap{min-height:calc(100vh - 52px)}
+  .content{padding-bottom:80px}
+
+  /* Герой */
+  .hero{padding:2.5rem 1rem 1.5rem}
+  .hero h1{font-size:32px}
+  .hero>p{font-size:15px}
+  .stats-strip{flex-wrap:wrap;gap:1.5rem;padding:1.5rem 1rem;justify-content:space-around}
+  .stat-num{font-size:26px}
+
+  /* Карточки вакансий */
+  .job-card,.course-card,.bio-card,.emp-stat,.feat-card{border-radius:12px}
+  .emp-sec-head{flex-wrap:wrap;gap:8px}
+  .job-row{flex-wrap:wrap;gap:10px}
+  .job-row>div:last-child{width:100%;justify-content:flex-start}
+
+  /* Профиль */
+  .profile-layout>div:first-child{order:1}
+  .profile-layout>div:last-child{order:0}
+  .prof-card{margin-bottom:1rem}
+
+  /* Чат */
+  .chat-wrap{padding:.75rem}
+  .chat-messages{min-height:300px;max-height:55vh}
+
+  /* Форма работодателя */
+  .post-form-card{border-radius:14px;padding:1.25rem}
+
+  /* Хлебные крошки */
+  .breadcrumb{margin-bottom:1rem}
+}
+
+@media(min-width:769px){
+  .mob-menu-btn,.mob-drawer,.mob-bottom-nav{display:none!important}
+}
 </style>
 {% block extra_styles %}{% endblock %}
 </head>
@@ -57,7 +128,6 @@ footer{border-top:.5px solid var(--border);padding:2rem;text-align:center;font-s
   </a>
   <div class="nav-links">
     {% if current_user.is_authenticated and current_user.role == 'employer' %}
-      {# Работодателю не нужны ссылки соискателя #}
       <a class="nav-link {% if request.endpoint == 'employer_dashboard' %}active{% endif %}" href="{{ url_for('employer_dashboard') }}">Мои вакансии</a>
       <a class="nav-link {% if request.endpoint == 'chat_list' %}active{% endif %}" href="{{ url_for('chat_list') }}">Сообщения</a>
     {% else %}
@@ -78,8 +148,90 @@ footer{border-top:.5px solid var(--border);padding:2rem;text-align:center;font-s
       <a class="btn btn-outline" href="{{ url_for('login') }}">Войти</a>
       <a class="btn btn-rose" href="{{ url_for('register') }}">Регистрация</a>
     {% endif %}
+    <!-- Гамбургер (только мобильный) -->
+    <button class="mob-menu-btn" onclick="toggleMenu()" aria-label="Меню">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+
+<!-- Мобильное выдвижное меню -->
+<div class="mob-drawer" id="mobDrawer">
+  {% if current_user.is_authenticated and current_user.role == 'employer' %}
+    <a class="mob-link employer-link {% if request.endpoint == 'employer_dashboard' %}active{% endif %}" href="{{ url_for('employer_dashboard') }}" onclick="closeMenu()">🏢 Мои вакансии</a>
+    <a class="mob-link employer-link {% if request.endpoint == 'chat_list' %}active{% endif %}" href="{{ url_for('chat_list') }}" onclick="closeMenu()">💬 Сообщения</a>
+  {% elif current_user.is_authenticated %}
+    <a class="mob-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}" onclick="closeMenu()">✦ Главная</a>
+    <a class="mob-link {% if request.endpoint == 'jobs' %}active{% endif %}" href="{{ url_for('jobs') }}" onclick="closeMenu()">💼 Вакансии</a>
+    <a class="mob-link {% if request.endpoint == 'courses' %}active{% endif %}" href="{{ url_for('courses') }}" onclick="closeMenu()">📚 Курсы</a>
+    <a class="mob-link {% if request.endpoint == 'biographies' %}active{% endif %}" href="{{ url_for('biographies') }}" onclick="closeMenu()">⭐ Истории успеха</a>
+    <a class="mob-link {% if request.endpoint == 'chat_list' %}active{% endif %}" href="{{ url_for('chat_list') }}" onclick="closeMenu()">💬 Сообщения</a>
+  {% else %}
+    <a class="mob-link {% if request.endpoint == 'jobs' %}active{% endif %}" href="{{ url_for('jobs') }}" onclick="closeMenu()">💼 Вакансии</a>
+    <a class="mob-link {% if request.endpoint == 'courses' %}active{% endif %}" href="{{ url_for('courses') }}" onclick="closeMenu()">📚 Курсы</a>
+    <a class="mob-link {% if request.endpoint == 'biographies' %}active{% endif %}" href="{{ url_for('biographies') }}" onclick="closeMenu()">⭐ Истории успеха</a>
+  {% endif %}
+  <div class="mob-divider"></div>
+  {% if current_user.is_authenticated %}
+    <a class="mob-btn" href="{{ url_for('logout') }}" style="background:var(--rose-light);color:var(--rose)">Выйти</a>
+  {% else %}
+    <a class="mob-btn" href="{{ url_for('login') }}" style="background:var(--rose);color:#fff">Войти</a>
+    <a class="mob-btn" href="{{ url_for('register') }}" style="background:var(--sage-light);color:var(--sage);margin-top:.5rem">Регистрация</a>
+  {% endif %}
+</div>
+
+{% if current_user.is_authenticated %}
+<!-- Нижняя навигация для мобильных (внутри дашборда) -->
+{% if current_user.role == 'employer' %}
+<div class="mob-bottom-nav">
+  <a class="mob-bottom-btn {% if request.endpoint == 'employer_dashboard' %}active{% endif %}" href="{{ url_for('employer_dashboard') }}">
+    <span class="mob-ico">✦</span>Обзор
+  </a>
+  <a class="mob-bottom-btn" href="{{ url_for('employer_dashboard') }}" onclick="sessionStorage.setItem('empTab','post')">
+    <span class="mob-ico">＋</span>Вакансия
+  </a>
+  <a class="mob-bottom-btn {% if request.endpoint == 'chat_list' or request.endpoint == 'chat_room' %}active{% endif %}" href="{{ url_for('chat_list') }}">
+    <span class="mob-ico">💬</span>Чат
+  </a>
+  <a class="mob-bottom-btn {% if request.endpoint == 'logout' %}active{% endif %}" href="{{ url_for('logout') }}">
+    <span class="mob-ico">↩</span>Выход
+  </a>
+</div>
+{% else %}
+<div class="mob-bottom-nav">
+  <a class="mob-bottom-btn {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+    <span class="mob-ico">✦</span>Главная
+  </a>
+  <a class="mob-bottom-btn {% if request.endpoint == 'jobs' %}active{% endif %}" href="{{ url_for('jobs') }}">
+    <span class="mob-ico">💼</span>Вакансии
+  </a>
+  <a class="mob-bottom-btn {% if request.endpoint == 'courses' %}active{% endif %}" href="{{ url_for('courses') }}">
+    <span class="mob-ico">📚</span>Курсы
+  </a>
+  <a class="mob-bottom-btn {% if request.endpoint == 'chat_list' or request.endpoint == 'chat_room' %}active{% endif %}" href="{{ url_for('chat_list') }}">
+    <span class="mob-ico">💬</span>Чат
+  </a>
+  <a class="mob-bottom-btn {% if request.endpoint == 'profile' %}active{% endif %}" href="{{ url_for('profile') }}">
+    <span class="mob-ico">○</span>Профиль
+  </a>
+</div>
+{% endif %}
+{% endif %}
+
+<script>
+function toggleMenu(){
+  document.getElementById('mobDrawer').classList.toggle('open');
+}
+function closeMenu(){
+  document.getElementById('mobDrawer').classList.remove('open');
+}
+document.addEventListener('click', function(e){
+  const drawer = document.getElementById('mobDrawer');
+  if(drawer.classList.contains('open') && !drawer.contains(e.target) && !e.target.closest('.mob-menu-btn')){
+    closeMenu();
+  }
+});
+</script>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
